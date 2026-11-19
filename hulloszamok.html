@@ -614,6 +614,7 @@
 
       <!-- Number range -->
       <div class="opt-group" role="group" aria-label="Számkör">
+        <button class="opt-btn" data-range="1-5" type="button">1–5</button>
         <button class="opt-btn active" data-range="1-10" type="button">1–10</button>
         <button class="opt-btn" data-range="10-20" type="button">10–20</button>
         <button class="opt-btn" data-range="all" type="button">🌟 Mind</button>
@@ -869,7 +870,10 @@
     function generateProblem() {
       let minSum = 1;
       let maxSum = 10;
-      if (state.range === "10-20") {
+      if (state.range === "1-5") {
+        minSum = 1;
+        maxSum = 5;
+      } else if (state.range === "10-20") {
         minSum = 10;
         maxSum = 20;
       } else if (state.range === "all") {

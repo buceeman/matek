@@ -617,6 +617,7 @@
 
     <!-- Range selector -->
     <div class="range-bar">
+      <button class="range-btn" data-range="1-5">1 – 5</button>
       <button class="range-btn active" data-range="1-10">1 – 10</button>
       <button class="range-btn" data-range="10-20">10 – 20</button>
       <button class="range-btn" data-range="all">🌟 Mind (1–20)</button>
@@ -858,7 +859,7 @@
       const numpadEl = document.getElementById("numpad");
 
       function renderNumpad() {
-        const isWide = range !== "1-10";
+        const isWide = range === "10-20" || range === "all";
         numpadEl.classList.toggle("wide", isWide);
         numpadEl.innerHTML = "";
 
@@ -929,7 +930,9 @@
 
         for (let tries = 0; tries < 25; tries++) {
           if (op === "+") {
-            if (range === "1-10") {
+            if (range === "1-5") {
+              ans = randInt(2, 5);
+            } else if (range === "1-10") {
               ans = randInt(2, 10);
             } else if (range === "10-20") {
               ans = randInt(10, 20);
@@ -939,7 +942,9 @@
             a = randInt(1, ans - 1);
             b = ans - a;
           } else {
-            if (range === "1-10") {
+            if (range === "1-5") {
+              a = randInt(1, 5);
+            } else if (range === "1-10") {
               a = randInt(2, 10);
             } else if (range === "10-20") {
               a = randInt(10, 20);
