@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MatekAppok — A Szupertitkos Matek Főhadiszállás</title>
+  <style>
+    :root {
+      --sky-top: #6ec6ff;
+      --sky-bottom: #d6f4ff;
+      --card-bg: #ffffff;
+      --ink: #232946;
+      --muted: #5c647d;
+      --yellow: #ffd93d;
+      --yellow-dark: #e2b512;
+      --coral: #ff6b6b;
+      --coral-dark: #d94848;
+      --mint: #4ecdc4;
+      --mint-dark: #2ea89f;
+      --green: #6bcb77;
+      --green-dark: #45a351;
+      --purple: #9b5de5;
+      --purple-dark: #7538c2;
+      --wood: #c88441;
+      --wood-dark: #8c541f;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: "Comic Sans MS", "Chalkboard SE", "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      overflow-x: hidden;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.75) 0 36px, transparent 37px),
+        radial-gradient(circle at 16% 16%, rgba(255, 255, 255, 0.75) 0 46px, transparent 47px),
+        radial-gradient(circle at 21% 18%, rgba(255, 255, 255, 0.75) 0 34px, transparent 35px),
+        radial-gradient(circle at 78% 14%, rgba(255, 255, 255, 0.7) 0 38px, transparent 39px),
+        radial-gradient(circle at 83% 12%, rgba(255, 255, 255, 0.7) 0 50px, transparent 51px),
+        radial-gradient(circle at 88% 15%, rgba(255, 255, 255, 0.7) 0 32px, transparent 33px),
+        linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 68%, #9be564 68%, #63b946 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 16px 24px;
+      position: relative;
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    /* Floating math symbols in background */
+    .bg-float {
+      position: fixed;
+      font-weight: 900;
+      opacity: 0.14;
+      pointer-events: none;
+      user-select: none;
+      z-index: 0;
+      animation: floaty 7s ease-in-out infinite;
+    }
+
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-16px) rotate(8deg); }
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1120px;
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 22px;
+    }
+
+    /* Top utility bar */
+    .top-bar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .badge-pill {
+      background: rgba(255, 255, 255, 0.9);
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      box-shadow: 0 4px 0 var(--ink);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .mini-btn {
+      appearance: none;
+      border: 3px solid var(--ink);
+      background: var(--yellow);
+      color: var(--ink);
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 0.9rem;
+      padding: 7px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 var(--ink);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mini-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 var(--ink);
+    }
+
+    .mini-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 var(--ink);
+    }
+
+    .mini-btn.secondary {
+      background: #ffffff;
+    }
+
+    .mini-btn.sound-on {
+      background: var(--mint);
+    }
+
+    /* Hero header */
+    .hero {
+      text-align: center;
+      max-width: 760px;
+    }
+
+    .hero-title {
+      margin: 0;
+      font-size: clamp(2rem, 4.8vw, 3.3rem);
+      line-height: 1.1;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+      -webkit-text-stroke: 2.5px var(--ink);
+      text-shadow: 0 6px 0 var(--ink);
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .hero-title:hover {
+      transform: scale(1.03) rotate(-1deg);
+    }
+
+    .hero-subtitle {
+      margin: 12px auto 0;
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.92);
+      border: 3px solid var(--ink);
+      border-radius: 18px;
+      padding: 8px 18px;
+      font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+      font-weight: 700;
+      box-shadow: 0 4px 0 rgba(35, 41, 70, 0.18);
+    }
+
+    /* App Cards Grid */
+    .cards-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 22px;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 920px) {
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .app-card {
+      position: relative;
+      background: var(--card-bg);
+      border: 4px solid var(--ink);
+      border-radius: 28px;
+      padding: 24px 22px 22px;
+      box-shadow: 0 10px 0 var(--ink), 0 18px 28px rgba(35, 41, 70, 0.18);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+      overflow: hidden;
+    }
+
+    .app-card:hover {
+      transform: translateY(-6px) rotate(-0.5deg);
+      box-shadow: 0 15px 0 var(--ink), 0 24px 36px rgba(35, 41, 70, 0.22);
+    }
+
+    .app-card.card-monster:hover {
+      transform: translateY(-6px) rotate(0.5deg);
+    }
+
+    .app-card.picked {
+      animation: wigglePick 0.6s ease-in-out 2;
+      outline: 6px solid var(--yellow);
+    }
+
+    @keyframes wigglePick {
+      0%, 100% { transform: scale(1) rotate(0); }
+      25% { transform: scale(1.04) rotate(-2deg); }
+      75% { transform: scale(1.04) rotate(2deg); }
+    }
+
+    .card-ribbon {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: var(--yellow);
+      border: 2.5px solid var(--ink);
+      border-radius: 999px;
+      padding: 4px 11px;
+      font-size: 0.78rem;
+      font-weight: 900;
+      box-shadow: 0 2px 0 var(--ink);
+    }
+
+    .new-tab-link {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 2.5px solid var(--ink);
+      background: #f4f6fb;
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 900;
+      font-size: 1.05rem;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 3px 0 var(--ink);
+      transition: transform 0.1s ease, background 0.15s ease;
+    }
+
+    .new-tab-link:hover {
+      background: var(--yellow);
+      transform: translateY(-2px);
+    }
+
+    .mascot-stage {
+      width: 156px;
+      height: 140px;
+      margin-top: 14px;
+      margin-bottom: 8px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .mascot-stage svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .app-card:hover .mascot-stage svg {
+      transform: scale(1.07) translateY(-4px);
+    }
+
+    .speech-bubble {
+      background: #fff9db;
+      border: 2.5px solid var(--ink);
+      border-radius: 14px;
+      padding: 5px 12px;
+      font-size: 0.84rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+      position: relative;
+      box-shadow: 0 3px 0 rgba(35, 41, 70, 0.12);
+    }
+
+    .card-title {
+      margin: 4px 0 6px;
+      font-size: 1.65rem;
+      font-weight: 900;
+      line-height: 1.15;
+    }
+
+    .card-desc {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 0.97rem;
+      line-height: 1.45;
+      max-width: 340px;
+    }
+
+    .tags-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .tag {
+      background: #eef4ff;
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .card-treehouse .tag {
+      background: #e9f9e5;
+    }
+
+    .card-monster .tag {
+      background: #f5ebff;
+    }
+
+    .card-rain .tag {
+      background: #e6f4ff;
+    }
+
+    .launch-btn {
+      width: 100%;
+      margin-top: auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-decoration: none;
+      font-family: inherit;
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: #ffffff;
+      border: 3.5px solid var(--ink);
+      border-radius: 18px;
+      padding: 14px 20px;
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .launch-btn.tree-btn {
+      background: linear-gradient(180deg, var(--green) 0%, var(--green-dark) 100%);
+      box-shadow: 0 6px 0 var(--ink);
+    }
+
+    .launch-btn.monster-btn {
+      background: linear-gradient(180deg, var(--coral) 0%, var(--coral-dark) 100%);
+      box-shadow: 0 6px 0 var(--ink);
+    }
+
+    .launch-btn.rain-btn {
+      background: linear-gradient(180deg, #4dabf7 0%, #228be6 100%);
+      box-shadow: 0 6px 0 var(--ink);
+    }
+
+    .launch-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 0 var(--ink);
+    }
+
+    .launch-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 var(--ink);
+    }
+
+    /* Funny Bottom Joke & Wheel Panel */
+    .fun-panel {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.94);
+      border: 4px solid var(--ink);
+      border-radius: 24px;
+      padding: 16px 20px;
+      box-shadow: 0 8px 0 var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .joke-box {
+      flex: 1 1 320px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .joke-emoji {
+      font-size: 2rem;
+      flex-shrink: 0;
+      animation: bounceSlow 2.4s ease-in-out infinite;
+    }
+
+    @keyframes bounceSlow {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    .joke-text {
+      font-size: 0.96rem;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .joke-label {
+      display: block;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--purple-dark);
+      font-weight: 900;
+      margin-bottom: 2px;
+    }
+
+    .fun-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      appearance: none;
+      border: 3px solid var(--ink);
+      border-radius: 14px;
+      padding: 10px 15px;
+      font-family: inherit;
+      font-weight: 900;
+      font-size: 0.92rem;
+      cursor: pointer;
+      color: var(--ink);
+      background: var(--yellow);
+      box-shadow: 0 4px 0 var(--ink);
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .action-btn.purple {
+      background: var(--purple);
+      color: #ffffff;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 var(--ink);
+    }
+
+    .action-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 var(--ink);
+    }
+
+    footer {
+      position: relative;
+      z-index: 2;
+      margin-top: 18px;
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #16330d;
+      background: rgba(255, 255, 255, 0.55);
+      padding: 6px 14px;
+      border-radius: 999px;
+    }
+
+    kbd {
+      background: #ffffff;
+      border: 2px solid var(--ink);
+      border-radius: 6px;
+      padding: 1px 6px;
+      font-size: 0.8rem;
+      font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Floating background math doodles -->
+  <div class="bg-float" style="top: 14%; left: 6%; font-size: 3rem;">+</div>
+  <div class="bg-float" style="top: 26%; right: 7%; font-size: 3.2rem; animation-delay: 1.2s;">=</div>
+  <div class="bg-float" style="bottom: 22%; left: 4%; font-size: 2.8rem; animation-delay: 2.1s;">7</div>
+  <div class="bg-float" style="bottom: 18%; right: 5%; font-size: 3rem; animation-delay: 0.7s;">&minus;</div>
+
+  <main class="container">
+    <div class="top-bar">
+      <div class="badge-pill">
+        <span>🧮</span>
+        <span>MatekAppok Játékterem • 3 Játék Készen Áll</span>
+      </div>
+      <div class="top-actions">
+        <button class="mini-btn" id="confetti-btn" type="button">🎉 Ingyen Konfetti!</button>
+        <button class="mini-btn secondary" id="sound-btn" type="button" aria-pressed="false">🔇 Hang: KI</button>
+      </div>
+    </div>
+
+    <header class="hero">
+      <h1 class="hero-title" id="hero-title" title="Kattints rám egy meglepiért!">
+        🚀 Szupertitkos Matek Főhadiszállás!
+      </h1>
+      <div class="hero-subtitle">
+        Figyelem: mellékhatásként kuncogás és véletlen matekzseniség léphet fel!
+      </div>
+    </header>
+
+    <section class="cards-grid" aria-label="Matekos Alkalmazások">
+      <!-- App 1: Number Treehouse -->
+      <article class="app-card card-treehouse" id="card-tree">
+        <span class="card-ribbon">Gomb: <kbd>1</kbd></span>
+        <a class="new-tab-link" href="bontas.html" target="_blank" rel="noopener" title="Megnyitás új lapon">↗</a>
+
+        <div class="mascot-stage" data-mascot="owl" title="Bökd meg a baglyot!">
+          <svg viewBox="0 0 160 140" aria-hidden="true">
+            <!-- Tree branch -->
+            <path d="M10 124 Q80 112 150 126" stroke="#7c491d" stroke-width="14" stroke-linecap="round" fill="none" />
+            <circle cx="24" cy="112" r="10" fill="#5ec243" stroke="#232946" stroke-width="3" />
+            <circle cx="136" cy="113" r="11" fill="#5ec243" stroke="#232946" stroke-width="3" />
+            <!-- Owl body -->
+            <ellipse cx="80" cy="78" rx="44" ry="46" fill="#c88441" stroke="#232946" stroke-width="4" />
+            <ellipse cx="80" cy="88" rx="28" ry="30" fill="#fff3d6" />
+            <!-- Ear tufts -->
+            <polygon points="44,44 34,20 60,34" fill="#a8672b" stroke="#232946" stroke-width="3.5" stroke-linejoin="round" />
+            <polygon points="116,44 126,20 100,34" fill="#a8672b" stroke="#232946" stroke-width="3.5" stroke-linejoin="round" />
+            <!-- Big Googly Eyes -->
+            <circle cx="62" cy="62" r="17" fill="#ffffff" stroke="#232946" stroke-width="3.5" />
+            <circle cx="98" cy="62" r="17" fill="#ffffff" stroke="#232946" stroke-width="3.5" />
+            <circle class="pupil" data-cx="62" data-cy="62" cx="62" cy="62" r="7.5" fill="#232946" />
+            <circle class="pupil" data-cx="98" data-cy="62" cx="98" cy="62" r="7.5" fill="#232946" />
+            <circle cx="65" cy="59" r="2.5" fill="#ffffff" />
+            <circle cx="101" cy="59" r="2.5" fill="#ffffff" />
+            <!-- Beak -->
+            <polygon points="73,72 87,72 80,84" fill="#ffd93d" stroke="#232946" stroke-width="3" stroke-linejoin="round" />
+            <!-- Feet -->
+            <path d="M60 120 L55 128 M64 120 L64 129 M68 120 L73 128" stroke="#ffd93d" stroke-width="4" stroke-linecap="round" />
+            <path d="M92 120 L87 128 M96 120 L96 129 M100 120 L105 128" stroke="#ffd93d" stroke-width="4" stroke-linecap="round" />
+          </svg>
+        </div>
+
+        <div class="speech-bubble" id="owl-quote">"Huhú! Bontsuk fel a számokat, mint a makkokat!"</div>
+        <h2 class="card-title">Számbontó Lombház</h2>
+        <p class="card-desc">
+          Mássz fel a hangulatos lombházba és gyakorold a számbontást! Szedd szét a nagy számokat kisebb párokra.
+        </p>
+
+        <div class="tags-row">
+          <span class="tag">🌳 Lombház Hangulat</span>
+          <span class="tag">🧩 Számbontás</span>
+        </div>
+
+        <a class="launch-btn tree-btn" href="bontas.html" data-app="tree">
+          <span>Mássz be &amp; Játssz!</span>
+          <span>➔</span>
+        </a>
+      </article>
+
+      <!-- App 2: Monster Math -->
+      <article class="app-card card-monster" id="card-monster">
+        <span class="card-ribbon">Gomb: <kbd>2</kbd></span>
+        <a class="new-tab-link" href="plusminus.html" target="_blank" rel="noopener" title="Megnyitás új lapon">↗</a>
+
+        <div class="mascot-stage" data-mascot="monster" title="Csiklandozd meg a szörnyet!">
+          <svg viewBox="0 0 160 140" aria-hidden="true">
+            <!-- Antennae -->
+            <path d="M62 32 Q50 12 42 16" stroke="#232946" stroke-width="4" fill="none" stroke-linecap="round" />
+            <circle cx="40" cy="16" r="7" fill="#ffd93d" stroke="#232946" stroke-width="3" />
+            <path d="M98 32 Q110 12 118 16" stroke="#232946" stroke-width="4" fill="none" stroke-linecap="round" />
+            <circle cx="120" cy="16" r="7" fill="#4ecdc4" stroke="#232946" stroke-width="3" />
+            <!-- Monster blob body -->
+            <path d="M34 95 C28 50, 48 28, 80 28 C112 28, 132 50, 126 95 C124 118, 108 126, 80 126 C52 126, 36 118, 34 95 Z"
+                  fill="#9b5de5" stroke="#232946" stroke-width="4" />
+            <!-- Horns -->
+            <polygon points="44,44 30,26 56,34" fill="#ff6b6b" stroke="#232946" stroke-width="3" stroke-linejoin="round" />
+            <polygon points="116,44 130,26 104,34" fill="#ff6b6b" stroke="#232946" stroke-width="3" stroke-linejoin="round" />
+            <!-- 3 Googly Eyes (2 big + 1 silly small) -->
+            <circle cx="58" cy="64" r="15" fill="#ffffff" stroke="#232946" stroke-width="3.5" />
+            <circle cx="102" cy="64" r="15" fill="#ffffff" stroke="#232946" stroke-width="3.5" />
+            <circle cx="80" cy="48" r="9" fill="#ffffff" stroke="#232946" stroke-width="3" />
+            <circle class="pupil" data-cx="58" data-cy="64" cx="58" cy="64" r="6.5" fill="#232946" />
+            <circle class="pupil" data-cx="102" data-cy="64" cx="102" cy="64" r="6.5" fill="#232946" />
+            <circle class="pupil" data-cx="80" data-cy="48" cx="80" cy="48" r="4" fill="#232946" />
+            <!-- Toothy smile -->
+            <path d="M52 92 Q80 114 108 92 Z" fill="#232946" />
+            <polygon points="62,94 68,94 65,103" fill="#ffffff" />
+            <polygon points="92,94 98,94 95,103" fill="#ffffff" />
+            <ellipse cx="80" cy="103" rx="10" ry="5" fill="#ff6b6b" />
+          </svg>
+        </div>
+
+        <div class="speech-bubble" id="monster-quote">"Etess meg pluszokkal és mínuszokkal! Nyamm!"</div>
+        <h2 class="card-title">Szörnyes Matek! (1–10)</h2>
+        <p class="card-desc">
+          Állj össze az éhes matekszörnyekkel, és győzd le az összeadást meg a kivonást 1-től 10-ig konfettizáporral!
+        </p>
+
+        <div class="tags-row">
+          <span class="tag">👾 Vicces Szörnyek</span>
+          <span class="tag">➕ &amp; ➖ Gyakorlás</span>
+        </div>
+
+        <a class="launch-btn monster-btn" href="plusminus.html" data-app="monster">
+          <span>Szabadítsd el a Szörnyeket!</span>
+          <span>➔</span>
+        </a>
+      </article>
+
+      <!-- App 3: Falling Numbers -->
+      <article class="app-card card-rain" id="card-rain">
+        <span class="card-ribbon">Gomb: <kbd>3</kbd></span>
+        <a class="new-tab-link" href="hulloszamok.html" target="_blank" rel="noopener" title="Megnyitás új lapon">↗</a>
+
+        <div class="mascot-stage" data-mascot="frog" title="Bökd meg az űrbékát!">
+          <svg viewBox="0 0 160 140" aria-hidden="true">
+            <!-- Parachute canopy -->
+            <path d="M35 42 C45 10, 115 10, 125 42 Z" fill="#ffd93d" stroke="#232946" stroke-width="3.5" />
+            <line x1="42" y1="42" x2="62" y2="70" stroke="#232946" stroke-width="2.5" />
+            <line x1="118" y1="42" x2="98" y2="70" stroke="#232946" stroke-width="2.5" />
+            <!-- Frog body -->
+            <ellipse cx="80" cy="96" rx="40" ry="32" fill="#6bcb77" stroke="#232946" stroke-width="4" />
+            <ellipse cx="80" cy="104" rx="24" ry="18" fill="#d8f5a2" />
+            <!-- Googly eyes -->
+            <circle cx="62" cy="68" r="15" fill="#ffffff" stroke="#232946" stroke-width="3.5" />
+            <circle cx="98" cy="68" r="15" fill="#ffffff" stroke="#232946" stroke-width="3.5" />
+            <circle class="pupil" data-cx="62" data-cy="68" cx="62" cy="68" r="6.5" fill="#232946" />
+            <circle class="pupil" data-cx="98" data-cy="68" cx="98" cy="68" r="6.5" fill="#232946" />
+            <circle cx="64" cy="65" r="2.2" fill="#ffffff" />
+            <circle cx="100" cy="65" r="2.2" fill="#ffffff" />
+            <!-- Happy smile -->
+            <path d="M64 95 Q80 107 96 95" fill="none" stroke="#232946" stroke-width="3.5" stroke-linecap="round" />
+          </svg>
+        </div>
+
+        <div class="speech-bubble" id="frog-quote">"Brekeke! Kapd el az égből hulló jó választ!"</div>
+        <h2 class="card-title">Számeső!</h2>
+        <p class="card-desc">
+          Az égből potyognak a számok! Koppints a jó eredményre, mielőtt elrepülnek — 1–10, 10–20 vagy mind!
+        </p>
+
+        <div class="tags-row">
+          <span class="tag">🪂 Hulló Számok</span>
+          <span class="tag">⚡ Gyors Reflex</span>
+        </div>
+
+        <a class="launch-btn rain-btn" href="hulloszamok.html" data-app="rain">
+          <span>Elkapom őket!</span>
+          <span>➔</span>
+        </a>
+      </article>
+    </section>
+
+    <!-- Funny interactive bar -->
+    <section class="fun-panel" aria-label="Vicces Vezérlők">
+      <div class="joke-box">
+        <div class="joke-emoji" id="joke-emoji">🤓</div>
+        <div class="joke-text">
+          <span class="joke-label">Minősített Matekos Favicc</span>
+          <span id="joke-content">Miért szomorú a matekkönyv? Mert túl sok a problémája!</span>
+        </div>
+      </div>
+      <div class="fun-actions">
+        <button class="action-btn" id="joke-btn" type="button">😂 Még egy vicc</button>
+        <button class="action-btn purple" id="spin-btn" type="button">🎲 Válassz helyettem!</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Tipp: Nyomd meg az <kbd>1</kbd>-est a Lombházhoz, a <kbd>2</kbd>-est a Szörnyekhez, a <kbd>3</kbd>-ast a Számesőhöz, vagy a <kbd>C</kbd>-t a konfettihez!
+  </footer>
+
+  <script>
+    // --- Tiny Web Audio Synth (no external files needed) ---
+    let soundEnabled = false;
+    let audioCtx = null;
+
+    function playTone(freq, duration = 0.09, type = "sine", vol = 0.08) {
+      if (!soundEnabled) return;
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function playCheer() {
+      playTone(523.25, 0.08, "triangle");
+      setTimeout(() => playTone(659.25, 0.08, "triangle"), 70);
+      setTimeout(() => playTone(783.99, 0.14, "triangle"), 140);
+    }
+
+    const soundBtn = document.getElementById("sound-btn");
+    soundBtn.addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      soundBtn.textContent = soundEnabled ? "🔊 Hang: BE" : "🔇 Hang: KI";
+      soundBtn.classList.toggle("sound-on", soundEnabled);
+      soundBtn.setAttribute("aria-pressed", String(soundEnabled));
+      if (soundEnabled) playCheer();
+    });
+
+    // --- Googly Eyes Follow Mouse ---
+    const pupils = document.querySelectorAll(".pupil");
+    function moveEyes(clientX, clientY) {
+      pupils.forEach((pupil) => {
+        const svg = pupil.closest("svg");
+        const rect = svg.getBoundingClientRect();
+        const cx = parseFloat(pupil.dataset.cx);
+        const cy = parseFloat(pupil.dataset.cy);
+        const eyeScreenX = rect.left + (cx / 160) * rect.width;
+        const eyeScreenY = rect.top + (cy / 140) * rect.height;
+        const angle = Math.atan2(clientY - eyeScreenY, clientX - eyeScreenX);
+        const maxDist = parseFloat(pupil.getAttribute("r")) < 5 ? 3.2 : 5.5;
+        pupil.setAttribute("cx", (cx + Math.cos(angle) * maxDist).toFixed(2));
+        pupil.setAttribute("cy", (cy + Math.sin(angle) * maxDist).toFixed(2));
+      });
+    }
+
+    window.addEventListener("mousemove", (e) => moveEyes(e.clientX, e.clientY));
+    window.addEventListener("touchmove", (e) => {
+      if (e.touches[0]) moveEyes(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+
+    // --- Boop the Mascots for Funny Quotes ---
+    const owlQuotes = [
+      '"Huhú! Bontsuk fel a számokat, mint a makkokat!"',
+      '"Tipp: a 10 igazából csak két 5-ös ballonkabátban."',
+      '"Bagoly vagyok, éjszaka is látom a jó megoldást!"',
+      '"Ne a csőrömet böködd, hanem irány a lombház!"'
+    ];
+    const monsterQuotes = [
+      '"Etess meg pluszokkal és mínuszokkal! Nyamm!"',
+      '"Három szemem van, de még így is az ujjaimon számolok."',
+      '"10 - 10 = 0... pont ennyi nasim maradt!"',
+      '"Rrrr! Ez szörnyülködő nyelven azt jelenti: ügyes vagy!"'
+    ];
+
+    const frogQuotes = [
+      '"Brekeke! Kapd el az égből hulló jó választ!"',
+      '"Ejtőernyős békaként mondom: a matek repít!"',
+      '"Koppints gyorsan, mielőtt a számok földet érnek!"',
+      '"1–10 vagy 10–20? Nekem mindegy, csak ugorhassak!"'
+    ];
+
+    let owlIdx = 0;
+    let monsterIdx = 0;
+    let frogIdx = 0;
+    document.querySelector('[data-mascot="owl"]').addEventListener("click", () => {
+      owlIdx = (owlIdx + 1) % owlQuotes.length;
+      document.getElementById("owl-quote").textContent = owlQuotes[owlIdx];
+      playTone(620, 0.08, "sine");
+    });
+
+    document.querySelector('[data-mascot="monster"]').addEventListener("click", () => {
+      monsterIdx = (monsterIdx + 1) % monsterQuotes.length;
+      document.getElementById("monster-quote").textContent = monsterQuotes[monsterIdx];
+      playTone(240, 0.1, "sawtooth", 0.05);
+    });
+
+    document.querySelector('[data-mascot="frog"]').addEventListener("click", () => {
+      frogIdx = (frogIdx + 1) % frogQuotes.length;
+      document.getElementById("frog-quote").textContent = frogQuotes[frogIdx];
+      playTone(460, 0.09, "triangle");
+    });
+
+    // --- Math Jokes ---
+    const jokes = [
+      ["🤓", "Miért szomorú a matekkönyv? Mert túl sok a problémája!"],
+      ["📐", "Miért érdemes mindig a 90 fokos sarokba állni? Mert ott mindig meleg van!"],
+      ["🍕", "Mit mondott a 0 a 8-asnak? 'De csinos öved van!'"],
+      ["🥶", "Miért nem tud a két párhuzamos egyenes összebarátkozni? Mert sosem találkoznak!"],
+      ["🦖", "Melyik a szörnyek kedvenc művelete? A rémisztő kivonás!"],
+      ["🦉", "Mivel számol a bagoly? Huhú-kalkulátorral!"],
+      ["✏️", "Mi az: zöld és nagyon jó matekból? Okos uborka!"]
+    ];
+    let jokeIdx = 0;
+
+    function nextJoke() {
+      jokeIdx = (jokeIdx + 1) % jokes.length;
+      document.getElementById("joke-emoji").textContent = jokes[jokeIdx][0];
+      document.getElementById("joke-content").textContent = jokes[jokeIdx][1];
+      playTone(540, 0.07, "triangle");
+    }
+    document.getElementById("joke-btn").addEventListener("click", nextJoke);
+
+    // --- Confetti Engine ---
+    const canvas = document.getElementById("confetti-canvas");
+    const ctx = canvas.getContext("2d");
+    let pieces = [];
+    let animId = null;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    function burstConfetti(count = 90) {
+      const colors = ["#ff6b6b", "#ffd93d", "#4ecdc4", "#9b5de5", "#6bcb77", "#ffffff"];
+      for (let i = 0; i < count; i++) {
+        pieces.push({
+          x: Math.random() * canvas.width,
+          y: -10 - Math.random() * 80,
+          w: 7 + Math.random() * 8,
+          h: 6 + Math.random() * 6,
+          vx: (Math.random() - 0.5) * 6,
+          vy: 3 + Math.random() * 5,
+          rot: Math.random() * Math.PI * 2,
+          vrot: (Math.random() - 0.5) * 0.2,
+          color: colors[Math.floor(Math.random() * colors.length)]
+        });
+      }
+      if (!animId) tickConfetti();
+    }
+
+    function tickConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pieces = pieces.filter((p) => p.y < canvas.height + 20);
+      for (const p of pieces) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.08;
+        p.rot += p.vrot;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      if (pieces.length > 0) {
+        animId = requestAnimationFrame(tickConfetti);
+      } else {
+        animId = null;
+      }
+    }
+
+    document.getElementById("confetti-btn").addEventListener("click", () => {
+      burstConfetti(100);
+      playCheer();
+    });
+    document.getElementById("hero-title").addEventListener("click", () => {
+      burstConfetti(70);
+      playCheer();
+    });
+
+    // --- Pick For Me! Roulette ---
+    const spinBtn = document.getElementById("spin-btn");
+    const cards = [
+      { el: document.getElementById("card-tree"), url: "bontas.html", name: "Számbontó Lombház" },
+      { el: document.getElementById("card-monster"), url: "plusminus.html", name: "Szörnyes Matek" },
+      { el: document.getElementById("card-rain"), url: "hulloszamok.html", name: "Számeső!" }
+    ];
+
+    let spinning = false;
+    spinBtn.addEventListener("click", () => {
+      if (spinning) return;
+      spinning = true;
+      cards.forEach((c) => c.el.classList.remove("picked"));
+      let step = 0;
+      const totalSteps = 9 + Math.floor(Math.random() * 5);
+      const timer = setInterval(() => {
+        cards.forEach((c) => c.el.classList.remove("picked"));
+        const idx = step % cards.length;
+        cards[idx].el.classList.add("picked");
+        playTone(400 + idx * 130, 0.05, "square", 0.04);
+        step++;
+        if (step >= totalSteps) {
+          clearInterval(timer);
+          const winner = cards[(step - 1) % cards.length];
+          burstConfetti(80);
+          playCheer();
+          spinBtn.textContent = `🎉 Irány: ${winner.name}!`;
+          setTimeout(() => {
+            window.location.href = winner.url;
+          }, 950);
+        }
+      }, 130);
+    });
+
+    // --- Keyboard Shortcuts (1, 2, C, J) ---
+    window.addEventListener("keydown", (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      const key = e.key.toLowerCase();
+      if (key === "1") {
+        playCheer();
+        window.location.href = "bontas.html";
+      } else if (key === "2") {
+        playCheer();
+        window.location.href = "plusminus.html";
+      } else if (key === "3") {
+        playCheer();
+        window.location.href = "hulloszamok.html";
+      } else if (key === "c") {
+        burstConfetti(90);
+        playCheer();
+      } else if (key === "j") {
+        nextJoke();
+      }
+    });
+  </script>
+</body>
+</html>

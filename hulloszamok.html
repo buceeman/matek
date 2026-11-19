@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Számeső! — Hulló Számok Matek</title>
+  <style>
+    :root {
+      --ink: #232946;
+      --sky-1: #5ec8ff;
+      --sky-2: #d8f3ff;
+      --grass-1: #8ce99a;
+      --grass-2: #51cf66;
+      --card: #ffffff;
+      --yellow: #ffd93d;
+      --coral: #ff6b6b;
+      --mint: #4ecdc4;
+      --purple: #9b5de5;
+      --blue: #4dabf7;
+      --orange: #ff922b;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Comic Sans MS", "Chalkboard SE", "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+    }
+
+    body {
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 78%, var(--grass-1) 78%, var(--grass-2) 100%);
+      position: relative;
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    /* Top Navigation & Settings */
+    .hud-header {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 10px 12px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .top-left, .top-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      appearance: none;
+      text-decoration: none;
+      border: 2.5px solid var(--ink);
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--ink);
+      font-family: inherit;
+      font-weight: 800;
+      font-size: clamp(0.78rem, 2.2vw, 0.92rem);
+      padding: 6px 11px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 3px 0 var(--ink);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: transform 0.1s ease, background 0.15s ease;
+    }
+
+    .pill:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 var(--ink);
+    }
+
+    .pill.active {
+      background: var(--yellow);
+    }
+
+    .pill.sound-on {
+      background: var(--mint);
+    }
+
+    /* Mode & Range Bar */
+    .options-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .opt-group {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.72);
+      border: 2.5px solid var(--ink);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    .opt-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      font-family: inherit;
+      font-weight: 800;
+      font-size: clamp(0.74rem, 2vw, 0.86rem);
+      padding: 5px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+
+    .opt-btn.active {
+      background: var(--ink);
+      color: #ffffff;
+    }
+
+    /* Problem & Score Banner */
+    .problem-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--card);
+      border: 4px solid var(--ink);
+      border-radius: 24px;
+      padding: 8px 16px;
+      box-shadow: 0 6px 0 var(--ink);
+    }
+
+    .mascot-mini {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex: 1 1 140px;
+    }
+
+    .mascot-face {
+      font-size: clamp(1.8rem, 4vw, 2.3rem);
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .mascot-msg {
+      font-size: clamp(0.76rem, 2vw, 0.92rem);
+      font-weight: 800;
+      line-height: 1.2;
+      color: #3b4262;
+    }
+
+    .equation-box {
+      background: #fff9db;
+      border: 3px solid var(--ink);
+      border-radius: 18px;
+      padding: 6px 18px;
+      font-size: clamp(1.6rem, 5vw, 2.4rem);
+      font-weight: 900;
+      letter-spacing: 1px;
+      white-space: nowrap;
+      box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.08);
+    }
+
+    .stats-mini {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex: 1 1 120px;
+      font-weight: 900;
+      font-size: clamp(0.85rem, 2.2vw, 1rem);
+    }
+
+    .stat-chip {
+      background: #eef4ff;
+      border: 2.5px solid var(--ink);
+      border-radius: 14px;
+      padding: 4px 10px;
+      white-space: nowrap;
+    }
+
+    /* Falling Arena */
+    .arena {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      max-width: 980px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .falling-item {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: clamp(66px, 15vw, 84px);
+      height: clamp(76px, 17vw, 96px);
+      border-radius: 50% 50% 48% 48% / 46% 46% 54% 54%;
+      border: 4px solid var(--ink);
+      display: grid;
+      place-items: center;
+      font-size: clamp(1.45rem, 4.5vw, 2rem);
+      font-weight: 900;
+      color: var(--ink);
+      cursor: pointer;
+      box-shadow: 0 6px 0 var(--ink), inset -8px -10px 0 rgba(0, 0, 0, 0.08), inset 10px 10px 0 rgba(255, 255, 255, 0.48);
+      will-change: transform;
+      transition: filter 0.1s ease;
+    }
+
+    /* Balloon knot & string */
+    .falling-item::before {
+      content: "";
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 12px;
+      height: 8px;
+      background: inherit;
+      border: 3px solid var(--ink);
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    .falling-item::after {
+      content: "";
+      position: absolute;
+      bottom: -28px;
+      left: 50%;
+      width: 2.5px;
+      height: 18px;
+      background: var(--ink);
+      transform: translateX(-50%) rotate(6deg);
+      pointer-events: none;
+    }
+
+    /* Balloon pop effect at bottom */
+    .balloon-pop {
+      position: absolute;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      font-size: 2.2rem;
+      z-index: 25;
+      animation: popBurst 0.45s ease-out forwards;
+    }
+
+    .balloon-pop-ring {
+      position: absolute;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 5px dashed var(--ink);
+      pointer-events: none;
+      transform: translate(-50%, -50%) scale(0.4);
+      z-index: 24;
+      animation: ringExpand 0.42s ease-out forwards;
+    }
+
+    @keyframes popBurst {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+      60% { transform: translate(-50%, -50%) scale(1.35); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+    }
+
+    @keyframes ringExpand {
+      0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0.95; }
+      100% { transform: translate(-50%, -50%) scale(1.7); opacity: 0; }
+    }
+
+    /* Sad sparrow flying out */
+    .sad-sparrow {
+      position: absolute;
+      pointer-events: none;
+      z-index: 35;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-weight: 900;
+      will-change: transform, opacity;
+    }
+
+    .sad-sparrow-bird {
+      font-size: clamp(2.1rem, 6vw, 2.7rem);
+      line-height: 1;
+      filter: drop-shadow(0 3px 0 rgba(35, 41, 70, 0.25));
+    }
+
+    .sad-sparrow-bubble {
+      background: #ffffff;
+      border: 2.5px solid var(--ink);
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-size: 0.78rem;
+      color: var(--ink);
+      white-space: nowrap;
+      margin-bottom: 2px;
+      box-shadow: 0 2px 0 var(--ink);
+    }
+
+    .sad-sparrow.fly-left {
+      animation: sparrowFlyLeft 1.55s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    }
+
+    .sad-sparrow.fly-right {
+      animation: sparrowFlyRight 1.55s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    }
+
+    @keyframes sparrowFlyLeft {
+      0% { transform: translate(-50%, 0) scale(0.5) rotate(0deg); opacity: 0; }
+      15% { transform: translate(-65%, -45px) scale(1.15) rotate(-10deg); opacity: 1; }
+      55% { transform: translate(-150px, -150px) scale(1.05) rotate(-16deg); opacity: 1; }
+      100% { transform: translate(-280px, -290px) scale(0.8) rotate(-22deg); opacity: 0; }
+    }
+
+    @keyframes sparrowFlyRight {
+      0% { transform: translate(-50%, 0) scale(0.5) rotate(0deg); opacity: 0; }
+      15% { transform: translate(-35%, -45px) scale(1.15) rotate(10deg); opacity: 1; }
+      55% { transform: translate(110px, -150px) scale(1.05) rotate(16deg); opacity: 1; }
+      100% { transform: translate(240px, -290px) scale(0.8) rotate(22deg); opacity: 0; }
+    }
+
+    .falling-item:hover {
+      filter: brightness(1.06);
+    }
+
+    .falling-item.wrong-shake {
+      animation: wrongShake 0.35s ease;
+      background: #dee2e6 !important;
+      opacity: 0.6;
+    }
+
+    .falling-item.right-pop {
+      animation: rightPop 0.35s ease forwards;
+      background: #69db7c !important;
+      z-index: 20;
+    }
+
+    @keyframes wrongShake {
+      0%, 100% { margin-left: 0; }
+      25% { margin-left: -10px; }
+      75% { margin-left: 10px; }
+    }
+
+    @keyframes rightPop {
+      0% { opacity: 1; filter: brightness(1.2); }
+      100% { opacity: 0; filter: brightness(1.5); }
+    }
+
+    /* Floating feedback toast inside arena */
+    .float-toast {
+      position: absolute;
+      pointer-events: none;
+      font-size: clamp(1.1rem, 3.2vw, 1.5rem);
+      font-weight: 900;
+      color: #ffffff;
+      -webkit-text-stroke: 1.5px var(--ink);
+      text-shadow: 0 3px 0 var(--ink);
+      animation: floatUp 0.9s ease-out forwards;
+      z-index: 30;
+      white-space: nowrap;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translate(-50%, 0) scale(0.7); opacity: 1; }
+      100% { transform: translate(-50%, -60px) scale(1.15); opacity: 0; }
+    }
+
+    /* Pause Overlay */
+    .pause-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(35, 41, 70, 0.45);
+      backdrop-filter: blur(4px);
+      display: none;
+      place-items: center;
+      z-index: 40;
+    }
+
+    .pause-overlay.show {
+      display: grid;
+    }
+
+    .pause-card {
+      background: #ffffff;
+      border: 4px solid var(--ink);
+      border-radius: 26px;
+      padding: 24px 30px;
+      text-align: center;
+      box-shadow: 0 8px 0 var(--ink);
+      max-width: 320px;
+    }
+
+    .pause-card h2 {
+      margin: 0 0 10px;
+      font-size: 1.6rem;
+    }
+
+    /* End-of-Round Results & Dancing Animals */
+    .results-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(35, 41, 70, 0.58);
+      backdrop-filter: blur(5px);
+      display: none;
+      place-items: center;
+      padding: 16px;
+      z-index: 45;
+      overflow-y: auto;
+    }
+
+    .results-overlay.show {
+      display: grid;
+    }
+
+    .results-card {
+      width: 100%;
+      max-width: 480px;
+      background: #ffffff;
+      border: 4px solid var(--ink);
+      border-radius: 28px;
+      padding: 22px 20px;
+      text-align: center;
+      box-shadow: 0 10px 0 var(--ink);
+      animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.75); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .results-title {
+      margin: 0 0 4px;
+      font-size: clamp(1.4rem, 4.5vw, 1.9rem);
+      font-weight: 900;
+    }
+
+    .results-sub {
+      margin: 0 0 14px;
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: #4a5270;
+    }
+
+    .dance-stage {
+      background: linear-gradient(180deg, #fff9db 0%, #ffe8cc 100%);
+      border: 3px solid var(--ink);
+      border-radius: 20px;
+      padding: 14px 10px 10px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 10px;
+      min-height: 92px;
+      overflow: hidden;
+    }
+
+    .dancer {
+      font-size: clamp(2.1rem, 6vw, 2.8rem);
+      line-height: 1;
+      display: inline-block;
+      transform-origin: bottom center;
+      filter: drop-shadow(0 3px 0 rgba(35, 41, 70, 0.2));
+    }
+
+    .dancer.dance-disco {
+      animation: danceDisco 0.7s ease-in-out infinite;
+    }
+
+    .dancer.dance-hop {
+      animation: danceHop 0.85s ease-in-out infinite;
+    }
+
+    .dancer.dance-wiggle {
+      animation: danceWiggle 1.1s ease-in-out infinite;
+    }
+
+    @keyframes danceDisco {
+      0%, 100% { transform: translateY(0) rotate(-10deg) scale(1); }
+      25% { transform: translateY(-14px) rotate(12deg) scale(1.12); }
+      50% { transform: translateY(0) rotate(10deg) scale(0.96); }
+      75% { transform: translateY(-10px) rotate(-12deg) scale(1.1); }
+    }
+
+    @keyframes danceHop {
+      0%, 100% { transform: translateY(0) rotate(-6deg); }
+      50% { transform: translateY(-12px) rotate(8deg) scale(1.06); }
+    }
+
+    @keyframes danceWiggle {
+      0%, 100% { transform: rotate(-7deg) translateY(0); }
+      50% { transform: rotate(7deg) translateY(-5px); }
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .stat-box {
+      background: #f4f7ff;
+      border: 2.5px solid var(--ink);
+      border-radius: 16px;
+      padding: 8px 10px;
+    }
+
+    .stat-box.wide {
+      grid-column: span 2;
+    }
+
+    .stat-num {
+      display: block;
+      font-size: 1.35rem;
+      font-weight: 900;
+    }
+
+    .stat-lbl {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #4a5270;
+    }
+
+    .results-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 600px) {
+      .mascot-mini {
+        display: none;
+      }
+      .problem-banner {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 6px 10px;
+      }
+      .stats-mini {
+        flex: 0 1 auto;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .stat-chip {
+        padding: 3px 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <header class="hud-header">
+    <div class="top-bar">
+      <div class="top-left">
+        <a class="pill" href="index.html" title="Vissza a főoldalra">🏠 Főoldal</a>
+        <button class="pill" id="pause-btn" type="button">⏸️ Szünet</button>
+      </div>
+
+      <div class="top-right">
+        <button class="pill sound-on" id="sound-btn" type="button" aria-pressed="true">🔊 Hang: BE</button>
+      </div>
+    </div>
+
+    <div class="options-bar">
+      <!-- Operation mode -->
+      <div class="opt-group" role="group" aria-label="Művelet">
+        <button class="opt-btn" data-mode="add" type="button">➕ Összeadás</button>
+        <button class="opt-btn" data-mode="sub" type="button">➖ Kivonás</button>
+        <button class="opt-btn active" data-mode="mix" type="button">🎲 Vegyes</button>
+      </div>
+
+      <!-- Number range -->
+      <div class="opt-group" role="group" aria-label="Számkör">
+        <button class="opt-btn active" data-range="1-10" type="button">1–10</button>
+        <button class="opt-btn" data-range="10-20" type="button">10–20</button>
+        <button class="opt-btn" data-range="all" type="button">🌟 Mind</button>
+      </div>
+
+      <!-- Speed -->
+      <div class="opt-group" role="group" aria-label="Sebesség">
+        <button class="opt-btn" data-speed="slow" type="button">🐢 Lassú</button>
+        <button class="opt-btn active" data-speed="normal" type="button">🐇 Normál</button>
+        <button class="opt-btn" data-speed="fast" type="button">🚀 Turbó</button>
+      </div>
+    </div>
+
+    <div class="problem-banner">
+      <div class="mascot-mini">
+        <div class="mascot-face" id="mascot-face">🐸</div>
+        <div class="mascot-msg" id="mascot-msg">Kapd el a helyes számot!</div>
+      </div>
+
+      <div class="equation-box" id="equation-box">3 + 4 = ?</div>
+
+      <div class="stats-mini">
+        <div class="stat-chip" title="Feladat">🎯 <span id="progress-val">1</span>/10</div>
+        <div class="stat-chip" title="Pontszám">⭐ <span id="score-val">0</span></div>
+        <div class="stat-chip" title="Sorozat">🔥 <span id="streak-val">0</span></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="arena" id="arena">
+    <div class="pause-overlay" id="pause-overlay">
+      <div class="pause-card">
+        <h2>⏸️ Pihi idő!</h2>
+        <p style="margin: 0 0 16px; font-weight: 700;">A számok addig lebegnek a felhők között.</p>
+        <button class="pill active" id="resume-btn" type="button" style="font-size: 1.1rem; padding: 10px 22px;">▶️ Mehet tovább!</button>
+      </div>
+    </div>
+  </main>
+
+  <div class="results-overlay" id="results-overlay" role="dialog" aria-modal="true" aria-labelledby="results-title">
+    <div class="results-card">
+      <h2 class="results-title" id="results-title">🎉 Szép munka!</h2>
+      <p class="results-sub" id="results-sub">Íme a táncoló szurkolócsapatod:</p>
+
+      <div class="dance-stage" id="dance-stage" aria-label="Táncoló állatok"></div>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <span class="stat-num" id="res-first-try">0 / 10</span>
+          <span class="stat-lbl">🎯 Elsőre eltalálva</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="res-score">0</span>
+          <span class="stat-lbl">⭐ Összpontszám</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="res-mistakes">0</span>
+          <span class="stat-lbl">❌ Hibás koppintás</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="res-streak">0</span>
+          <span class="stat-lbl">🔥 Legjobb sorozat</span>
+        </div>
+        <div class="stat-box wide">
+          <span class="stat-num" id="res-time">0 mp</span>
+          <span class="stat-lbl">⏱️ Teljesített idő</span>
+        </div>
+      </div>
+
+      <div class="results-actions">
+        <button class="pill active" id="replay-btn" type="button" style="font-size: 1.05rem; padding: 10px 18px;">🔄 Új 10 feladat</button>
+        <a class="pill" href="index.html" style="font-size: 1.05rem; padding: 10px 18px;">🏠 Főoldal</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TOTAL_TASKS = 10;
+
+    // --- Game State ---
+    const state = {
+      mode: "mix",       // add | sub | mix
+      range: "1-10",     // 1-10 | 10-20 | all
+      speed: "normal",   // slow | normal | fast
+      sound: true,
+      paused: false,
+      finished: false,
+      taskIndex: 1,
+      score: 0,
+      streak: 0,
+      bestStreak: 0,
+      firstTryCount: 0,
+      mistakes: 0,
+      hadMistakeThisTask: false,
+      startTime: Date.now(),
+      answer: 0,
+      roundLocked: false,
+      items: []
+    };
+
+    const speedMap = {
+      slow: 52,
+      normal: 86,
+      fast: 132
+    };
+
+    const bubbleColors = [
+      "#ffd93d",
+      "#ff8787",
+      "#74c0fc",
+      "#b197fc",
+      "#63e6be",
+      "#ffa94d"
+    ];
+
+    const praiseMessages = [
+      ["🐸", "Békaugrásnyi telitalálat!"],
+      ["🚀", "Villámgyors matek-rakéta!"],
+      ["🦸", "Szuperagy bekapcsolva!"],
+      ["🎉", "Puff neki, ez pontos volt!"],
+      ["🌟", "Igazi számmágus vagy!"],
+      ["🦖", "Dínó-erős számolás!"],
+      ["🏆", "Ez sima ügy volt neked!"]
+    ];
+
+    const missMessages = [
+      ["🤭", "Hoppá! Ez a szám csiklandós!"],
+      ["😜", "Majdnem! Keress egy másikat!"],
+      ["🎈", "Upsz, ez csak egy csali szám!"],
+      ["🧐", "Hmm, számoljuk újra gyorsan!"]
+    ];
+
+    const arena = document.getElementById("arena");
+    const equationBox = document.getElementById("equation-box");
+    const progressVal = document.getElementById("progress-val");
+    const scoreVal = document.getElementById("score-val");
+    const streakVal = document.getElementById("streak-val");
+    const mascotFace = document.getElementById("mascot-face");
+    const mascotMsg = document.getElementById("mascot-msg");
+    const pauseOverlay = document.getElementById("pause-overlay");
+    const pauseBtn = document.getElementById("pause-btn");
+    const resultsOverlay = document.getElementById("results-overlay");
+    const danceStage = document.getElementById("dance-stage");
+
+    // --- Web Audio ---
+    let audioCtx = null;
+    function playTone(freq, dur = 0.08, type = "sine", vol = 0.08) {
+      if (!state.sound) return;
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + dur);
+    }
+
+    function playWinSound() {
+      playTone(523.25, 0.08, "triangle", 0.09);
+      setTimeout(() => playTone(659.25, 0.08, "triangle", 0.09), 65);
+      setTimeout(() => playTone(783.99, 0.14, "triangle", 0.09), 130);
+    }
+
+    function playOopsSound() {
+      playTone(230, 0.11, "sawtooth", 0.05);
+      setTimeout(() => playTone(180, 0.12, "sawtooth", 0.05), 80);
+    }
+
+    function playPopSound() {
+      playTone(150, 0.06, "square", 0.06);
+      setTimeout(() => playTone(95, 0.07, "triangle", 0.07), 30);
+    }
+
+    function playSadChirp() {
+      playTone(880, 0.09, "sine", 0.06);
+      setTimeout(() => playTone(720, 0.11, "sine", 0.06), 100);
+      setTimeout(() => playTone(540, 0.16, "sine", 0.05), 210);
+    }
+
+    // --- Confetti ---
+    const canvas = document.getElementById("confetti-canvas");
+    const ctx = canvas.getContext("2d");
+    let confetti = [];
+    let confettiAnim = null;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      if (typeof state !== "undefined" && state.items && state.items.length) {
+        const w = arena.clientWidth || window.innerWidth;
+        const maxX = Math.max(8, w - 88);
+        state.items.forEach((item) => {
+          if (item.x > maxX) item.x = maxX;
+          if (item.x < 4) item.x = 4;
+        });
+      }
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    function burstConfetti(x, y, count = 28) {
+      const colors = ["#ff6b6b", "#ffd93d", "#4ecdc4", "#9b5de5", "#6bcb77", "#ffffff"];
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2 + Math.random() * 5.5;
+        confetti.push({
+          x,
+          y,
+          w: 6 + Math.random() * 6,
+          h: 5 + Math.random() * 5,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 2,
+          rot: Math.random() * Math.PI * 2,
+          vrot: (Math.random() - 0.5) * 0.25,
+          color: colors[Math.floor(Math.random() * colors.length)]
+        });
+      }
+      if (!confettiAnim) tickConfetti();
+    }
+
+    function tickConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      confetti = confetti.filter((p) => p.y < canvas.height + 30 && p.x > -30 && p.x < canvas.width + 30);
+      for (const p of confetti) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.14;
+        p.rot += p.vrot;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      if (confetti.length > 0) {
+        confettiAnim = requestAnimationFrame(tickConfetti);
+      } else {
+        confettiAnim = null;
+      }
+    }
+
+    // --- Problem Generator ---
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function generateProblem() {
+      let minSum = 1;
+      let maxSum = 10;
+      if (state.range === "10-20") {
+        minSum = 10;
+        maxSum = 20;
+      } else if (state.range === "all") {
+        minSum = 1;
+        maxSum = 20;
+      }
+
+      const op = state.mode === "mix"
+        ? (Math.random() < 0.5 ? "add" : "sub")
+        : state.mode;
+
+      let a, b, ans, text;
+      if (op === "add") {
+        ans = randInt(Math.max(2, minSum), maxSum);
+        a = randInt(1, ans - 1);
+        b = ans - a;
+        text = `${a} + ${b} = ?`;
+      } else {
+        a = randInt(Math.max(2, minSum), maxSum);
+        b = randInt(1, a - 1);
+        ans = a - b;
+        text = `${a} − ${b} = ?`;
+      }
+
+      state.answer = ans;
+      state.hadMistakeThisTask = false;
+      progressVal.textContent = state.taskIndex;
+      equationBox.textContent = text;
+      buildFallingChoices(ans, maxSum);
+    }
+
+    function clearArenaItems() {
+      for (const item of state.items) {
+        if (item.el && item.el.parentNode) {
+          item.el.remove();
+        }
+      }
+      state.items = [];
+    }
+
+    function buildFallingChoices(correct, maxRange) {
+      clearArenaItems();
+      state.roundLocked = false;
+
+      const count = 4;
+      const values = new Set([correct]);
+      let guard = 0;
+      while (values.size < count && guard < 60) {
+        guard++;
+        const offset = randInt(-4, 4);
+        const candidate = correct + offset;
+        if (candidate >= 0 && candidate <= maxRange + 2 && candidate !== correct) {
+          values.add(candidate);
+        }
+      }
+      while (values.size < count) {
+        values.add(randInt(0, maxRange + 3));
+      }
+
+      const shuffled = Array.from(values).sort(() => Math.random() - 0.5);
+      const arenaWidth = arena.clientWidth || window.innerWidth;
+      const itemSize = Math.min(86, Math.max(66, arenaWidth * 0.15));
+      const laneWidth = arenaWidth / count;
+
+      shuffled.forEach((val, idx) => {
+        const el = document.createElement("button");
+        el.type = "button";
+        el.className = "falling-item";
+        el.textContent = val;
+        el.style.background = bubbleColors[(idx + randInt(0, 5)) % bubbleColors.length];
+
+        const minX = idx * laneWidth + 6;
+        const maxX = Math.max(minX, (idx + 1) * laneWidth - itemSize - 6);
+        const x = minX + Math.random() * (maxX - minX);
+        const y = -itemSize - randInt(10, 140) - idx * 35;
+        const speedMult = 0.86 + Math.random() * 0.28;
+
+        const itemObj = {
+          val,
+          isCorrect: val === correct,
+          x,
+          y,
+          speedMult,
+          swayPhase: Math.random() * Math.PI * 2,
+          el
+        };
+
+        el.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          handlePick(itemObj);
+        });
+
+        arena.appendChild(el);
+        state.items.push(itemObj);
+      });
+    }
+
+    function showToast(x, y, text) {
+      const toast = document.createElement("div");
+      toast.className = "float-toast";
+      toast.style.left = `${x}px`;
+      toast.style.top = `${y}px`;
+      toast.textContent = text;
+      arena.appendChild(toast);
+      setTimeout(() => toast.remove(), 900);
+    }
+
+    function handlePick(item) {
+      if (state.paused || state.roundLocked) return;
+
+      const rect = item.el.getBoundingClientRect();
+      const arenaRect = arena.getBoundingClientRect();
+      const cx = rect.left - arenaRect.left + rect.width / 2;
+      const cy = rect.top - arenaRect.top + rect.height / 2;
+
+      if (item.isCorrect) {
+        state.roundLocked = true;
+        state.score += 10 + state.streak * 2;
+        state.streak += 1;
+        if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+        if (!state.hadMistakeThisTask) state.firstTryCount += 1;
+
+        scoreVal.textContent = state.score;
+        streakVal.textContent = state.streak;
+
+        item.el.classList.add("right-pop");
+        playWinSound();
+        burstConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2, 34);
+
+        const [face, msg] = praiseMessages[randInt(0, praiseMessages.length - 1)];
+        mascotFace.textContent = face;
+        mascotMsg.textContent = msg;
+        showToast(cx, cy, `+${10 + (state.streak - 1) * 2} ⭐`);
+
+        setTimeout(() => {
+          if (state.taskIndex >= TOTAL_TASKS) {
+            showResults();
+          } else {
+            state.taskIndex += 1;
+            generateProblem();
+          }
+        }, 620);
+      } else {
+        state.hadMistakeThisTask = true;
+        state.mistakes += 1;
+        state.streak = 0;
+        streakVal.textContent = "0";
+        item.el.classList.remove("wrong-shake");
+        void item.el.offsetWidth;
+        item.el.classList.add("wrong-shake");
+        playOopsSound();
+
+        const [face, msg] = missMessages[randInt(0, missMessages.length - 1)];
+        mascotFace.textContent = face;
+        mascotMsg.textContent = msg;
+      }
+    }
+
+    function spawnBalloonPop(x, y, color) {
+      const ring = document.createElement("div");
+      ring.className = "balloon-pop-ring";
+      ring.style.left = `${x}px`;
+      ring.style.top = `${y}px`;
+      ring.style.borderColor = color || "var(--ink)";
+      arena.appendChild(ring);
+      setTimeout(() => ring.remove(), 440);
+
+      const pop = document.createElement("div");
+      pop.className = "balloon-pop";
+      pop.style.left = `${x}px`;
+      pop.style.top = `${y}px`;
+      pop.textContent = "💥";
+      arena.appendChild(pop);
+      setTimeout(() => pop.remove(), 460);
+    }
+
+    function spawnSadSparrow(x, y) {
+      const sparrow = document.createElement("div");
+      const dir = x > (arena.clientWidth / 2) ? "fly-left" : "fly-right";
+      sparrow.className = `sad-sparrow ${dir}`;
+      sparrow.style.left = `${x}px`;
+      sparrow.style.top = `${y}px`;
+      sparrow.innerHTML = `
+        <div class="sad-sparrow-bubble">😢 Csip-csip...</div>
+        <div class="sad-sparrow-bird">🐦💧</div>
+      `;
+      arena.appendChild(sparrow);
+      setTimeout(() => sparrow.remove(), 1600);
+    }
+
+    // --- Animation Loop ---
+    let lastTime = performance.now();
+    function gameLoop(now) {
+      const dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+
+      if (!state.paused && !state.roundLocked && !state.finished) {
+        const arenaH = arena.clientHeight;
+        const baseSpeed = speedMap[state.speed];
+
+        for (const item of state.items) {
+          item.y += baseSpeed * item.speedMult * dt;
+          item.swayPhase += dt * 2.4;
+          const swayX = Math.sin(item.swayPhase) * 8;
+          item.el.style.transform = `translate3d(${(item.x + swayX).toFixed(1)}px, ${item.y.toFixed(1)}px, 0)`;
+
+          if (item.y >= arenaH - 74) {
+            const popX = item.x + swayX + 38;
+            const popY = arenaH - 36;
+            spawnBalloonPop(popX, popY, item.el.style.background);
+            playPopSound();
+
+            if (item.isCorrect) {
+              spawnSadSparrow(popX, arenaH - 46);
+              playSadChirp();
+              mascotFace.textContent = "🐦";
+              mascotMsg.textContent = "Jaj, elrepült a szomorú veréb! Kapd el újra a lufit!";
+            }
+
+            item.y = -110 - Math.random() * 50;
+            item.el.classList.remove("wrong-shake");
+          }
+        }
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function showResults() {
+      state.finished = true;
+      clearArenaItems();
+
+      const elapsedSec = Math.max(1, Math.round((Date.now() - state.startTime) / 1000));
+      document.getElementById("res-first-try").textContent = `${state.firstTryCount} / ${TOTAL_TASKS}`;
+      document.getElementById("res-score").textContent = state.score;
+      document.getElementById("res-mistakes").textContent = state.mistakes;
+      document.getElementById("res-streak").textContent = state.bestStreak;
+      document.getElementById("res-time").textContent = `${elapsedSec} mp`;
+
+      let title, sub, animals, danceClass;
+      if (state.firstTryCount >= 9) {
+        title = "🏆 SZUPER ÁLLATBULI!";
+        sub = "Elképesztő! Majdnem minden vagy minden feladat elsőre sikerült!";
+        animals = ["🐸", "🦁", "🐼", "🦄", "🐧", "🐵"];
+        danceClass = "dance-disco";
+      } else if (state.firstTryCount >= 6) {
+        title = "🎉 ÜGYES ÁLLATCSAPAT!";
+        sub = "Nagyon szép munka! Az állatok máris táncra perdültek!";
+        animals = ["🐸", "🦊", "🐰", "🐨"];
+        danceClass = "dance-hop";
+      } else {
+        title = "🌱 BÁTOR KIS CSAPAT!";
+        sub = "Szuper, hogy végigcsináltad! Egy újabb körben még több állat fog táncolni!";
+        animals = ["🐢", "🐣"];
+        danceClass = "dance-wiggle";
+      }
+
+      document.getElementById("results-title").textContent = title;
+      document.getElementById("results-sub").textContent = sub;
+
+      danceStage.innerHTML = "";
+      animals.forEach((emoji, i) => {
+        const span = document.createElement("span");
+        span.className = `dancer ${danceClass}`;
+        span.style.animationDelay = `${(i * 0.14).toFixed(2)}s`;
+        span.textContent = emoji;
+        danceStage.appendChild(span);
+      });
+
+      resultsOverlay.classList.add("show");
+      burstConfetti(window.innerWidth / 2, window.innerHeight * 0.35, 70);
+      playWinSound();
+      setTimeout(() => playWinSound(), 260);
+    }
+
+    function startNewRound() {
+      state.finished = false;
+      state.paused = false;
+      state.taskIndex = 1;
+      state.score = 0;
+      state.streak = 0;
+      state.bestStreak = 0;
+      state.firstTryCount = 0;
+      state.mistakes = 0;
+      state.hadMistakeThisTask = false;
+      state.startTime = Date.now();
+
+      scoreVal.textContent = "0";
+      streakVal.textContent = "0";
+      progressVal.textContent = "1";
+      mascotFace.textContent = "🐸";
+      mascotMsg.textContent = "Kapd el a helyes számot!";
+      pauseOverlay.classList.remove("show");
+      resultsOverlay.classList.remove("show");
+      pauseBtn.textContent = "⏸️ Szünet";
+
+      generateProblem();
+    }
+
+    // --- Controls ---
+    function bindGroup(selector, key) {
+      const btns = document.querySelectorAll(selector);
+      btns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          btns.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          state[key] = btn.dataset[key];
+          playTone(480, 0.06, "triangle");
+          if (key === "mode" || key === "range") {
+            startNewRound();
+          }
+        });
+      });
+    }
+
+    bindGroup("[data-mode]", "mode");
+    bindGroup("[data-range]", "range");
+    bindGroup("[data-speed]", "speed");
+
+    document.getElementById("replay-btn").addEventListener("click", startNewRound);
+
+    document.getElementById("sound-btn").addEventListener("click", (e) => {
+      state.sound = !state.sound;
+      e.currentTarget.textContent = state.sound ? "🔊 Hang: BE" : "🔇 Hang: KI";
+      e.currentTarget.classList.toggle("sound-on", state.sound);
+      e.currentTarget.setAttribute("aria-pressed", String(state.sound));
+      if (state.sound) playTone(560, 0.08, "triangle");
+    });
+
+    function togglePause(force) {
+      state.paused = typeof force === "boolean" ? force : !state.paused;
+      pauseOverlay.classList.toggle("show", state.paused);
+      pauseBtn.textContent = state.paused ? "▶️ Folytatás" : "⏸️ Szünet";
+    }
+
+    pauseBtn.addEventListener("click", () => togglePause());
+    document.getElementById("resume-btn").addEventListener("click", () => togglePause(false));
+
+    // Start!
+    generateProblem();
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>

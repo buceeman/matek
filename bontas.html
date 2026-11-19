@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Számházikó — Számbontás gyakorló</title>
+  <style>
+    :root {
+      --sky-top: #7ec8f2;
+      --sky-mid: #bfe9ff;
+      --meadow-light: #8fd14f;
+      --meadow-dark: #4f9d32;
+      --wood-light: #d79b5b;
+      --wood-mid: #b97738;
+      --wood-dark: #7c491d;
+      --wood-border: #5c3310;
+      --trunk-mid: #7a4b26;
+      --trunk-dark: #543116;
+      --leaf-light: #5ec243;
+      --leaf-dark: #2f8527;
+      --cream: #fff9ec;
+      --shadow: 0 6px 16px rgba(34, 48, 22, 0.22);
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      overflow-x: hidden;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: "Comic Sans MS", "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+      background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 52%, var(--meadow-light) 52%, var(--meadow-dark) 100%);
+      color: #2c2416;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    /* Decorative clouds */
+    .cloud {
+      position: fixed;
+      background: rgba(255, 255, 255, 0.88);
+      border-radius: 999px;
+      z-index: 0;
+      pointer-events: none;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.06));
+    }
+    .cloud::before,
+    .cloud::after {
+      content: "";
+      position: absolute;
+      background: inherit;
+      border-radius: 50%;
+    }
+    .cloud-1 { width: 130px; height: 42px; top: 55px; left: 5%; }
+    .cloud-1::before { width: 56px; height: 56px; top: -26px; left: 18px; }
+    .cloud-1::after { width: 42px; height: 42px; top: -16px; right: 20px; }
+
+    .cloud-2 { width: 150px; height: 46px; top: 80px; right: 6%; }
+    .cloud-2::before { width: 64px; height: 64px; top: -30px; left: 24px; }
+    .cloud-2::after { width: 48px; height: 48px; top: -20px; right: 22px; }
+
+    /* Top Control Bar */
+    .top-bar {
+      width: 100%;
+      max-width: 960px;
+      padding: 12px 16px 6px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      z-index: 5;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 250, 235, 0.92);
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 3px solid var(--wood-mid);
+      box-shadow: 0 3px 0 var(--wood-dark);
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--wood-dark);
+    }
+
+    .controls-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill-btn {
+      border: 2.5px solid var(--wood-dark);
+      background: var(--cream);
+      color: var(--wood-dark);
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 0.92rem;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 3px 0 var(--wood-dark);
+      transition: transform 0.1s ease, background 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .pill-btn:hover {
+      background: #fff3cf;
+    }
+    .pill-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 var(--wood-dark);
+    }
+    .pill-btn.active {
+      background: #ffd447;
+      color: #4a2a07;
+    }
+
+    /* Number Selector */
+    .number-bar {
+      width: 100%;
+      max-width: 960px;
+      padding: 4px 16px 8px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 7px;
+      z-index: 5;
+    }
+
+    .num-select-btn {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      border: 3px solid var(--wood-dark);
+      background: #fffaf0;
+      color: var(--wood-dark);
+      font-family: inherit;
+      font-size: 1.25rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 4px 0 var(--wood-dark);
+      transition: transform 0.12s ease, background 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .num-select-btn:hover {
+      transform: translateY(-2px);
+      background: #fff0c2;
+    }
+    .num-select-btn.selected {
+      background: #ff6b6b;
+      color: #fff;
+      border-color: #9e2222;
+      box-shadow: 0 4px 0 #9e2222;
+      transform: translateY(-2px) scale(1.06);
+    }
+    .num-select-btn .star-badge {
+      position: absolute;
+      top: -7px;
+      right: -6px;
+      font-size: 0.9rem;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+    }
+
+    /* Random Range Bar (for One by One mode) */
+    .range-bar {
+      width: 100%;
+      max-width: 960px;
+      padding: 0 16px 8px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      z-index: 5;
+    }
+    .range-bar.hidden {
+      display: none;
+    }
+    .range-label {
+      font-weight: 800;
+      font-size: 0.92rem;
+      color: var(--wood-dark);
+      background: rgba(255, 250, 235, 0.85);
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 2px solid var(--wood-mid);
+    }
+
+    /* Main Stage */
+    .stage {
+      width: 100%;
+      max-width: 900px;
+      padding: 6px 14px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 4;
+      flex: 1;
+    }
+
+    /* Treehouse Container */
+    .treehouse {
+      position: relative;
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 2px;
+    }
+
+    /* Roof + Attic Window */
+    .roof-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 560px;
+      height: 175px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 3;
+    }
+
+    .roof-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      filter: drop-shadow(0 8px 12px rgba(40, 25, 10, 0.28));
+    }
+
+    .target-window {
+      position: relative;
+      z-index: 4;
+      width: 96px;
+      height: 96px;
+      margin-bottom: 18px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #dff5ff, #8cd3f7);
+      border: 6px solid var(--wood-dark);
+      box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.2), 0 4px 0 rgba(0, 0, 0, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .target-number {
+      font-size: 3.4rem;
+      font-weight: 900;
+      line-height: 1;
+      color: #e63946;
+      text-shadow:
+        -2px -2px 0 #fff,
+         2px -2px 0 #fff,
+        -2px  2px 0 #fff,
+         2px  2px 0 #fff,
+         0 4px 0 #9b1c26;
+      animation: popIn 0.3s ease;
+    }
+
+    /* Tree Trunk & Canopy */
+    .trunk-area {
+      position: relative;
+      width: 100%;
+      max-width: 660px;
+      min-height: 290px;
+      background: linear-gradient(90deg, #5d3618 0%, #865229 22%, #995f32 50%, #7d4a23 80%, #563014 100%);
+      border-left: 5px solid #42230c;
+      border-right: 5px solid #42230c;
+      border-radius: 0 0 28px 28px;
+      padding: 20px 18px 88px;
+      margin-top: -10px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 2;
+    }
+
+    /* Leafy side bushes behind trunk */
+    .trunk-area::before,
+    .trunk-area::after {
+      content: "";
+      position: absolute;
+      top: -14px;
+      width: 90px;
+      height: 90px;
+      background: radial-gradient(circle at 40% 40%, var(--leaf-light), var(--leaf-dark));
+      border-radius: 50%;
+      z-index: -1;
+      box-shadow: 0 6px 0 rgba(25, 78, 22, 0.45);
+    }
+    .trunk-area::before { left: -34px; }
+    .trunk-area::after { right: -34px; }
+
+    /* Wood grain lines */
+    .bark-line {
+      position: absolute;
+      width: 6px;
+      border-radius: 99px;
+      background: rgba(54, 28, 8, 0.32);
+      pointer-events: none;
+    }
+
+    /* Planks Grid */
+    .planks-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 16px;
+      z-index: 3;
+    }
+    .planks-grid.single-mode {
+      grid-template-columns: 1fr;
+      max-width: 380px;
+      margin: 14px 0;
+    }
+
+    .plank {
+      position: relative;
+      background: linear-gradient(180deg, #e7ae6d 0%, #cf8f4c 52%, #bc7a37 100%);
+      border: 3.5px solid var(--wood-border);
+      border-radius: 14px;
+      padding: 10px 12px;
+      box-shadow: 0 5px 0 var(--wood-border), 0 8px 14px rgba(0, 0, 0, 0.22);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 1.75rem;
+      font-weight: 900;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+    .planks-grid.single-mode .plank {
+      font-size: 2.4rem;
+      padding: 18px 16px;
+    }
+
+    /* If odd number of planks in 2-col mode, center the last one */
+    .planks-grid:not(.single-mode) .plank.last-odd {
+      grid-column: 1 / -1;
+      justify-self: center;
+      width: calc(50% - 8px);
+    }
+
+    /* Decorative wooden nails on each plank */
+    .plank::before,
+    .plank::after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #5c3310;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.6;
+    }
+    .plank::before { left: 8px; }
+    .plank::after { right: 8px; }
+
+    .plank.solved {
+      background: linear-gradient(180deg, #d8f8b7 0%, #a9e374 100%);
+      border-color: #2f7d22;
+      box-shadow: 0 5px 0 #2f7d22, 0 0 16px rgba(173, 255, 117, 0.7);
+    }
+
+    .plank.active-plank {
+      transform: scale(1.03);
+      box-shadow: 0 6px 0 var(--wood-border), 0 0 0 4px #ffe066;
+    }
+
+    .plank.shake {
+      animation: shake 0.36s ease;
+    }
+
+    /* Colorful equation numbers like in the picture */
+    .num-a { color: #e63946; text-shadow: 1.5px 1.5px 0 #fff, -1px -1px 0 #fff; }
+    .num-b { color: #1d8a34; text-shadow: 1.5px 1.5px 0 #fff, -1px -1px 0 #fff; }
+    .num-c { color: #1976d2; text-shadow: 1.5px 1.5px 0 #fff, -1px -1px 0 #fff; }
+    .op-sign { color: #5c3310; text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.7); }
+
+    .slot-btn {
+      min-width: 48px;
+      height: 46px;
+      padding: 0 8px;
+      border-radius: 11px;
+      border: 3px dashed #6b3d14;
+      background: rgba(255, 252, 240, 0.92);
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: 900;
+      color: #6b3d14;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.12s ease, background 0.15s ease;
+    }
+    .planks-grid.single-mode .slot-btn {
+      min-width: 62px;
+      height: 58px;
+    }
+    .slot-btn.selected-slot {
+      border-style: solid;
+      border-color: #ff9800;
+      background: #fff9c4;
+      box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.45);
+      animation: pulse 1.3s infinite;
+    }
+    .slot-btn.filled-ok {
+      border-style: solid;
+      border-color: #2f7d22;
+      background: #ffffff;
+      color: #1d8a34;
+    }
+
+    /* Wooden Door & Mascot at bottom of trunk */
+    .tree-base {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 76px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 24px;
+      pointer-events: none;
+    }
+
+    .wooden-door {
+      width: 58px;
+      height: 68px;
+      background: linear-gradient(180deg, #b87333, #824b1c);
+      border: 4px solid #4a260a;
+      border-bottom: none;
+      border-radius: 30px 30px 0 0;
+      position: relative;
+      box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.25);
+    }
+    .wooden-door::before {
+      content: "";
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 22px;
+      height: 20px;
+      background: #ffe082;
+      border: 3px solid #4a260a;
+      border-radius: 10px 10px 2px 2px;
+    }
+    .wooden-door::after {
+      content: "";
+      position: absolute;
+      right: 8px;
+      top: 40px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ffd54f;
+    }
+
+    .critter-badge {
+      font-size: 2.3rem;
+      margin-bottom: 6px;
+      filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.25));
+      transition: transform 0.25s ease;
+    }
+
+    /* Visual Dots Helper */
+    .dots-helper {
+      margin-top: 12px;
+      background: rgba(255, 252, 240, 0.94);
+      border: 3px solid var(--wood-dark);
+      border-radius: 18px;
+      padding: 10px 16px;
+      box-shadow: 0 4px 0 var(--wood-dark);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      max-width: 660px;
+    }
+    .dots-helper.hidden {
+      display: none;
+    }
+    .dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 0, 0, 0.25);
+      box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.16);
+      display: inline-block;
+    }
+    .dot.group-a { background: #ff595e; }
+    .dot.group-b { background: #52b788; }
+    .dot.mystery {
+      background: #ffd166;
+      border: 2px dashed #7c491d;
+    }
+    .dots-plus {
+      font-weight: 900;
+      font-size: 1.2rem;
+      color: var(--wood-dark);
+      margin: 0 4px;
+    }
+
+    /* Number Pad */
+    .keypad-wrap {
+      margin-top: 14px;
+      background: rgba(255, 249, 236, 0.92);
+      border: 3.5px solid var(--wood-dark);
+      border-radius: 22px;
+      padding: 10px 14px;
+      box-shadow: 0 5px 0 var(--wood-dark);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      max-width: 680px;
+      width: 100%;
+    }
+
+    .key-btn {
+      width: 48px;
+      height: 50px;
+      border-radius: 14px;
+      border: 3px solid #2b4c7e;
+      background: linear-gradient(180deg, #ffffff 0%, #e4f1ff 100%);
+      color: #1d3557;
+      font-family: inherit;
+      font-size: 1.45rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #2b4c7e;
+      transition: transform 0.08s ease, background 0.12s ease;
+    }
+    .key-btn:hover {
+      background: #fff3b0;
+      transform: translateY(-2px);
+    }
+    .key-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #2b4c7e;
+    }
+
+    /* Celebration Banner */
+    .celebration {
+      position: fixed;
+      inset: 0;
+      background: rgba(25, 42, 18, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+      padding: 16px;
+    }
+    .celebration.hidden {
+      display: none;
+    }
+    .celebration-card {
+      background: #fffaf0;
+      border: 5px solid var(--wood-dark);
+      border-radius: 28px;
+      padding: 26px 28px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+      animation: popIn 0.32s ease;
+    }
+    .celebration-emoji {
+      font-size: 4rem;
+      line-height: 1.1;
+    }
+    .celebration-title {
+      font-size: 1.7rem;
+      font-weight: 900;
+      color: #2f7d22;
+      margin: 8px 0 6px;
+    }
+    .celebration-sub {
+      font-size: 1.05rem;
+      color: #5c4020;
+      margin-bottom: 14px;
+    }
+    .dancing-animals {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+      min-height: 48px;
+    }
+    .dancing-animals.hidden {
+      display: none;
+    }
+    .dancing-animal {
+      display: inline-block;
+      font-size: 2.2rem;
+      line-height: 1;
+      animation: animalDance 0.65s ease-in-out infinite alternate;
+      filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.16));
+    }
+    @keyframes animalDance {
+      0% { transform: translateY(0) rotate(-9deg) scale(1); }
+      50% { transform: translateY(-9px) rotate(0deg) scale(1.08); }
+      100% { transform: translateY(0) rotate(9deg) scale(1); }
+    }
+    .celebration-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .celebration-stats.hidden {
+      display: none;
+    }
+    .stat-pill {
+      background: #fff3cf;
+      border: 2.5px solid var(--wood-mid);
+      border-radius: 14px;
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--wood-dark);
+    }
+    .stat-label {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #7c491d;
+    }
+    .celebration-emoji.hidden {
+      display: none;
+    }
+    .celebration-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .big-cta {
+      border: 3px solid #2f7d22;
+      background: #70e000;
+      color: #163d0c;
+      font-family: inherit;
+      font-size: 1.1rem;
+      font-weight: 900;
+      padding: 10px 20px;
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #2f7d22;
+    }
+    .big-cta.secondary {
+      border-color: var(--wood-dark);
+      background: #ffd166;
+      color: #4a2a07;
+      box-shadow: 0 4px 0 var(--wood-dark);
+    }
+    .big-cta:active {
+      transform: translateY(2px);
+    }
+
+    /* Confetti canvas */
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 35;
+    }
+
+    .status-hint {
+      margin-top: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fffef5;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+      text-align: center;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.75); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-7px); }
+      50% { transform: translateX(7px); }
+      75% { transform: translateX(-5px); }
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    @media (max-width: 600px) {
+      .trunk-area {
+        padding: 16px 10px 80px;
+      }
+      .planks-grid {
+        gap: 8px 10px;
+      }
+      .plank {
+        font-size: 1.3rem;
+        padding: 8px 6px;
+        gap: 4px;
+      }
+      .plank::before,
+      .plank::after {
+        display: none;
+      }
+      .slot-btn {
+        min-width: 38px;
+        height: 38px;
+        padding: 0 4px;
+      }
+      .num-select-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 1.1rem;
+      }
+      .keypad-wrap {
+        position: sticky;
+        bottom: 8px;
+        z-index: 20;
+        padding: 8px 10px;
+        gap: 6px;
+      }
+      .key-btn {
+        width: 42px;
+        height: 44px;
+        font-size: 1.25rem;
+      }
+      .roof-wrap {
+        height: 145px;
+      }
+      .target-window {
+        width: 82px;
+        height: 82px;
+        margin-bottom: 14px;
+      }
+      .target-number {
+        font-size: 2.8rem;
+      }
+    }
+
+    @media (max-width: 350px) {
+      .planks-grid {
+        grid-template-columns: 1fr;
+      }
+      .planks-grid:not(.single-mode) .plank.last-odd {
+        width: 100%;
+      }
+    }
+
+    /* Doge Reaction Popup */
+    .doge-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 28;
+      pointer-events: none;
+      width: min(270px, 72vw);
+      height: min(290px, 76vw);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle, rgba(255, 250, 232, 0.92) 0%, rgba(255, 250, 232, 0.72) 55%, rgba(255, 250, 232, 0) 75%);
+      filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.32));
+      animation: popIn 0.22s ease;
+    }
+    .doge-popup.hidden {
+      display: none;
+    }
+    .doge-popup svg {
+      width: 100%;
+      height: auto;
+      max-width: 230px;
+      max-height: 230px;
+    }
+    .doge-popup.dance svg {
+      animation: dogeDance 0.42s infinite alternate ease-in-out;
+      transform-origin: center bottom;
+    }
+    .doge-popup.cry svg {
+      animation: dogeCry 0.32s infinite alternate ease-in-out;
+      transform-origin: center bottom;
+    }
+    .doge-badge {
+      font-size: 2.3rem;
+      line-height: 1;
+      margin-bottom: -6px;
+      animation: floatNote 0.7s infinite alternate ease-in-out;
+    }
+    .tear-drop {
+      animation: tearFall 0.65s infinite ease-in;
+    }
+    .tear-drop.right {
+      animation-delay: 0.28s;
+    }
+
+    @keyframes dogeDance {
+      0% { transform: translateY(0) rotate(-10deg) scale(1); }
+      50% { transform: translateY(-12px) rotate(0deg) scale(1.06); }
+      100% { transform: translateY(0) rotate(10deg) scale(1); }
+    }
+    @keyframes dogeCry {
+      0% { transform: translateY(0) rotate(-3deg); }
+      100% { transform: translateY(3px) rotate(3deg); }
+    }
+    @keyframes floatNote {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-7px); }
+    }
+    @keyframes tearFall {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(18px); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="cloud cloud-1"></div>
+  <div class="cloud cloud-2"></div>
+  <canvas id="confetti-canvas"></canvas>
+  <div class="doge-popup hidden" id="doge-popup" aria-hidden="true"></div>
+
+  <header class="top-bar">
+    <div class="brand">
+      <span>🌳</span>
+      <span id="app-title">Számházikó</span>
+    </div>
+    <div class="controls-group">
+      <a class="pill-btn" href="index.html" style="text-decoration: none;" title="Vissza a főoldalra">🏠 Főoldal</a>
+      <button class="pill-btn active" id="mode-house-btn" type="button">🏠 <span data-i18n="modeHouse">Teljes ház</span></button>
+      <button class="pill-btn" id="mode-single-btn" type="button">🎯 <span data-i18n="modeSingle">Egyesével</span></button>
+      <button class="pill-btn active" id="dots-btn" type="button">🔴 <span data-i18n="dots">Pöttyök</span></button>
+      <button class="pill-btn active" id="stats-btn" type="button">📊 <span data-i18n="stats">Statisztika</span></button>
+      <button class="pill-btn active" id="sound-btn" type="button">🔊</button>
+    </div>
+  </header>
+
+  <nav class="number-bar" id="number-bar" aria-label="Válassz egy számot"></nav>
+
+  <div class="range-bar hidden" id="range-bar" aria-label="Véletlen számkör">
+    <span class="range-label" data-i18n="randomLabel">🎲 Véletlen:</span>
+    <button class="pill-btn" data-range="1-5" type="button">1–5</button>
+    <button class="pill-btn" data-range="5-10" type="button">5–10</button>
+    <button class="pill-btn active" data-range="all" type="button" data-i18n="rangeAll">Mind (1–10)</button>
+  </div>
+
+  <main class="stage">
+    <section class="treehouse" aria-live="polite">
+      <div class="roof-wrap">
+        <svg class="roof-svg" viewBox="0 0 560 175" preserveAspectRatio="none" aria-hidden="true">
+          <!-- Leafy bush behind roof -->
+          <circle cx="85" cy="130" r="42" fill="#3f9b2c" />
+          <circle cx="475" cy="130" r="42" fill="#3f9b2c" />
+          <circle cx="135" cy="100" r="34" fill="#5ec243" />
+          <circle cx="425" cy="100" r="34" fill="#5ec243" />
+
+          <!-- Triangular wooden gable -->
+          <polygon points="45,155 280,18 515,155" fill="#c98846" stroke="#5c3310" stroke-width="6" stroke-linejoin="round" />
+          <!-- Vertical plank lines inside gable -->
+          <line x1="160" y1="88" x2="160" y2="155" stroke="#8b5222" stroke-width="3" />
+          <line x1="220" y1="53" x2="220" y2="155" stroke="#8b5222" stroke-width="3" />
+          <line x1="340" y1="53" x2="340" y2="155" stroke="#8b5222" stroke-width="3" />
+          <line x1="400" y1="88" x2="400" y2="155" stroke="#8b5222" stroke-width="3" />
+
+          <!-- Overhanging roof beams -->
+          <polyline points="20,162 280,12 540,162" fill="none" stroke="#5c3310" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+          <polyline points="20,162 280,12 540,162" fill="none" stroke="#a6632a" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+
+          <!-- Colorful bunting flags -->
+          <polygon points="88,132 114,117 110,146" fill="#ff595e" stroke="#5c3310" stroke-width="2" />
+          <polygon points="130,108 156,93 152,122" fill="#ffca3a" stroke="#5c3310" stroke-width="2" />
+          <polygon points="172,84 198,69 194,98" fill="#8ac926" stroke="#5c3310" stroke-width="2" />
+          <polygon points="362,69 388,84 366,98" fill="#1982c4" stroke="#5c3310" stroke-width="2" />
+          <polygon points="404,93 430,108 408,122" fill="#ffca3a" stroke="#5c3310" stroke-width="2" />
+          <polygon points="446,117 472,132 450,146" fill="#ff595e" stroke="#5c3310" stroke-width="2" />
+
+          <!-- Cute squirrel on the roof -->
+          <text x="115" y="75" font-size="34">🐿️</text>
+          <text x="415" y="78" font-size="30">🦋</text>
+        </svg>
+
+        <div class="target-window">
+          <div class="target-number" id="target-number">2</div>
+        </div>
+      </div>
+
+      <div class="trunk-area">
+        <div class="bark-line" style="left: 14%; top: 24px; height: 95px;"></div>
+        <div class="bark-line" style="right: 16%; top: 48px; height: 110px;"></div>
+        <div class="bark-line" style="left: 24%; bottom: 88px; height: 70px;"></div>
+
+        <div class="planks-grid" id="planks-grid"></div>
+
+        <div class="tree-base">
+          <span class="critter-badge" id="critter-left">🦊</span>
+          <div class="wooden-door"></div>
+          <span class="critter-badge" id="critter-right">🐰</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="dots-helper" id="dots-helper"></div>
+
+    <div class="keypad-wrap" id="keypad" aria-label="Number keypad"></div>
+
+    <div class="status-hint" id="status-hint"></div>
+  </main>
+
+  <div class="celebration hidden" id="celebration">
+    <div class="celebration-card">
+      <div class="celebration-emoji" id="celebration-emoji">🦉🌟</div>
+      <div class="dancing-animals hidden" id="dancing-animals"></div>
+      <div class="celebration-title" id="celebration-title">Ügyes vagy!</div>
+      <div class="celebration-sub" id="celebration-sub">Kész lett a(z) 2-es számházikó!</div>
+      <div class="celebration-stats hidden" id="celebration-stats"></div>
+      <div class="celebration-actions">
+        <button class="big-cta secondary" id="replay-btn" type="button">🔄 <span data-i18n="playAgain">Újra</span></button>
+        <button class="big-cta" id="next-num-btn" type="button">➡️ <span data-i18n="nextNumber">Következő szám</span></button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const I18N = {
+        en: {
+          title: "Number Treehouse",
+          modeHouse: "Full House",
+          modeSingle: "One by One",
+          dots: "Dots",
+          hint: "Tap a ? box and pick the missing number!",
+          singleProgress: (done, total) => `Card ${done} of ${total}`,
+          celebrationTitle: "Awesome job!",
+          celebrationSub: (n) => `You finished the Number ${n} Treehouse!`,
+          celebrationSubRandom: (count) => `You finished all ${count} random tasks!`,
+          playAgain: "Play Again",
+          nextNumber: "Next Number",
+          randomLabel: "🎲 Random:",
+          rangeAll: "All (1–10)",
+          stats: "Stats",
+          statAccuracy: "Accuracy",
+          statMistakes: "Mistakes",
+          statTime: "Time",
+          random: "🎲"
+        },
+        hu: {
+          title: "Számházikó",
+          modeHouse: "Teljes ház",
+          modeSingle: "Egyesével",
+          dots: "Pöttyök",
+          hint: "Koppints egy ? mezőre, és válaszd ki a hiányzó számot!",
+          singleProgress: (done, total) => `${done}. feladat / ${total}`,
+          celebrationTitle: "Ügyes vagy!",
+          celebrationSub: (n) => `Kész lett a(z) ${n}-es számházikó!`,
+          celebrationSubRandom: (count) => `Mind a(z) ${count} véletlen feladat kész!`,
+          playAgain: "Újra",
+          nextNumber: "Következő szám",
+          randomLabel: "🎲 Véletlen:",
+          rangeAll: "Mind (1–10)",
+          stats: "Statisztika",
+          statAccuracy: "Pontosság",
+          statMistakes: "Hibák",
+          statTime: "Idő"
+        }
+      };
+
+      const CRITTERS = [
+        ["🐿️", "🐰"],
+        ["🦊", "🦉"],
+        ["🐨", "🦥"],
+        ["🐯", "🦜"],
+        ["🦌", "🦔"],
+        ["🐼", "🐸"],
+        ["🦁", "🐵"],
+        ["🐻", "🦋"],
+        ["🦝", "🐥"],
+        ["🦄", "🐝"]
+      ];
+
+      function loadCompleted() {
+        try {
+          const saved = JSON.parse(localStorage.getItem("treehouse_completed") || "[]");
+          return new Set(Array.isArray(saved) ? saved : []);
+        } catch (_) {
+          return new Set();
+        }
+      }
+
+      function saveCompleted() {
+        try {
+          localStorage.setItem("treehouse_completed", JSON.stringify([...state.completed]));
+        } catch (_) {}
+      }
+
+      const state = {
+        lang: "hu",
+        target: 2,
+        mode: "house", // "house" | "single"
+        randomMode: false,
+        randomRange: "all", // "1-5" | "5-10" | "all"
+        showDots: true,
+        showStats: true,
+        sound: true,
+        planks: [],
+        activeIndex: 0,
+        singleIndex: 0,
+        attempts: 0,
+        mistakes: 0,
+        startTime: Date.now(),
+        lastRoundStats: null,
+        completed: loadCompleted()
+      };
+
+      // DOM refs
+      const numberBarEl = document.getElementById("number-bar");
+      const rangeBarEl = document.getElementById("range-bar");
+      const rangeBtns = Array.from(rangeBarEl.querySelectorAll("[data-range]"));
+      const targetNumberEl = document.getElementById("target-number");
+      const planksGridEl = document.getElementById("planks-grid");
+      const dotsHelperEl = document.getElementById("dots-helper");
+      const keypadEl = document.getElementById("keypad");
+      const statusHintEl = document.getElementById("status-hint");
+      const critterLeftEl = document.getElementById("critter-left");
+      const critterRightEl = document.getElementById("critter-right");
+      const celebrationEl = document.getElementById("celebration");
+      const celebrationEmojiEl = document.getElementById("celebration-emoji");
+      const dancingAnimalsEl = document.getElementById("dancing-animals");
+      const celebrationTitleEl = document.getElementById("celebration-title");
+      const celebrationSubEl = document.getElementById("celebration-sub");
+      const celebrationStatsEl = document.getElementById("celebration-stats");
+
+      const modeHouseBtn = document.getElementById("mode-house-btn");
+      const modeSingleBtn = document.getElementById("mode-single-btn");
+      const dotsBtn = document.getElementById("dots-btn");
+      const statsBtn = document.getElementById("stats-btn");
+      const soundBtn = document.getElementById("sound-btn");
+      const replayBtn = document.getElementById("replay-btn");
+      const nextNumBtn = document.getElementById("next-num-btn");
+
+      // Web Audio helper
+      let audioCtx = null;
+      function playTone(freqs, duration = 0.13, type = "sine") {
+        if (!state.sound) return;
+        try {
+          if (!audioCtx) {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return;
+            audioCtx = new Ctx();
+          }
+          if (audioCtx.state === "suspended") audioCtx.resume();
+          const now = audioCtx.currentTime;
+          freqs.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+            gain.gain.setValueAtTime(0.14, now + idx * 0.09);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.09);
+            osc.stop(now + idx * 0.09 + duration);
+          });
+        } catch (_) {}
+      }
+
+      function playSuccess() {
+        playTone([523.25, 659.25], 0.14, "triangle");
+      }
+
+      function playTryAgain() {
+        playTone([220, 180], 0.12, "sine");
+      }
+
+      function playFanfare() {
+        playTone([523.25, 659.25, 783.99, 1046.5], 0.2, "triangle");
+      }
+
+      function getRangeBounds(range) {
+        if (range === "1-5") return [1, 5];
+        if (range === "5-10") return [5, 10];
+        return [1, 10];
+      }
+
+      function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+
+      // Build planks for current target
+      function buildPlanks(n) {
+        const list = [];
+        for (let a = 0; a <= n; a++) {
+          const b = n - a;
+          const missing = Math.random() < 0.5 ? "a" : "b";
+          list.push({
+            target: n,
+            a,
+            b,
+            missing,
+            solved: false
+          });
+        }
+        if (state.mode === "single") {
+          shuffleArray(list);
+        }
+        state.planks = list;
+        state.activeIndex = 0;
+        state.singleIndex = 0;
+        state.attempts = 0;
+        state.mistakes = 0;
+        state.startTime = Date.now();
+      }
+
+      // Build random mixed-target tasks from the selected range
+      function buildRandomPlanks(range, count = 10) {
+        const [min, max] = getRangeBounds(range);
+        const pool = [];
+        for (let t = min; t <= max; t++) {
+          for (let a = 0; a <= t; a++) {
+            pool.push({
+              target: t,
+              a,
+              b: t - a,
+              missing: Math.random() < 0.5 ? "a" : "b",
+              solved: false
+            });
+          }
+        }
+        shuffleArray(pool);
+        state.planks = pool.slice(0, Math.min(count, pool.length));
+        state.activeIndex = 0;
+        state.singleIndex = 0;
+        state.attempts = 0;
+        state.mistakes = 0;
+        state.startTime = Date.now();
+      }
+
+      function selectTarget(n) {
+        state.randomMode = false;
+        state.target = n;
+        celebrationEl.classList.add("hidden");
+        buildPlanks(n);
+        renderAll();
+      }
+
+      function startRandomSingle(range) {
+        if (range) state.randomRange = range;
+        state.mode = "single";
+        state.randomMode = true;
+        celebrationEl.classList.add("hidden");
+        buildRandomPlanks(state.randomRange);
+        renderAll();
+      }
+
+      function renderNumberBar() {
+        numberBarEl.innerHTML = "";
+        for (let n = 1; n <= 10; n++) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "num-select-btn" + (!state.randomMode && state.target === n ? " selected" : "");
+          btn.textContent = n;
+          if (state.completed.has(n)) {
+            const star = document.createElement("span");
+            star.className = "star-badge";
+            star.textContent = "⭐";
+            btn.appendChild(star);
+          }
+          btn.addEventListener("click", () => selectTarget(n));
+          numberBarEl.appendChild(btn);
+        }
+
+        const randBtn = document.createElement("button");
+        randBtn.type = "button";
+        randBtn.className = "num-select-btn" + (state.mode === "single" && state.randomMode ? " selected" : "");
+        randBtn.textContent = "🎲";
+        randBtn.title = "Random";
+        randBtn.addEventListener("click", () => {
+          if (state.mode === "single") {
+            startRandomSingle();
+          } else {
+            const [min, max] = getRangeBounds(state.randomRange);
+            const span = max - min + 1;
+            let next = Math.floor(Math.random() * span) + min;
+            if (span > 1 && next === state.target) {
+              next = min + ((next - min + 1) % span);
+            }
+            selectTarget(next);
+          }
+        });
+        numberBarEl.appendChild(randBtn);
+      }
+
+      function renderRangeBar() {
+        rangeBarEl.classList.toggle("hidden", state.mode !== "single");
+        rangeBtns.forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.range === state.randomRange);
+        });
+      }
+
+      function renderPlanks() {
+        planksGridEl.innerHTML = "";
+        planksGridEl.classList.toggle("single-mode", state.mode === "single");
+
+        const visibleIndices =
+          state.mode === "single"
+            ? [state.singleIndex]
+            : state.planks.map((_, i) => i);
+
+        visibleIndices.forEach((idx, pos) => {
+          const p = state.planks[idx];
+          const plank = document.createElement("div");
+          plank.className = "plank";
+          if (p.solved) plank.classList.add("solved");
+          if (idx === state.activeIndex && !p.solved) plank.classList.add("active-plank");
+          if (
+            state.mode === "house" &&
+            state.planks.length % 2 === 1 &&
+            pos === visibleIndices.length - 1
+          ) {
+            plank.classList.add("last-odd");
+          }
+
+          plank.appendChild(createTerm(p, idx, "a", "num-a"));
+          plank.appendChild(createOp("+"));
+          plank.appendChild(createTerm(p, idx, "b", "num-b"));
+          plank.appendChild(createOp("="));
+
+          const res = document.createElement("span");
+          res.className = "num-c";
+          res.textContent = p.target;
+          plank.appendChild(res);
+
+          plank.dataset.index = idx;
+          planksGridEl.appendChild(plank);
+        });
+      }
+
+      function createOp(symbol) {
+        const span = document.createElement("span");
+        span.className = "op-sign";
+        span.textContent = symbol;
+        return span;
+      }
+
+      function createTerm(plank, idx, side, colorClass) {
+        if (plank.missing !== side) {
+          const span = document.createElement("span");
+          span.className = colorClass;
+          span.textContent = plank[side];
+          return span;
+        }
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "slot-btn";
+        if (plank.solved) {
+          btn.classList.add("filled-ok");
+          btn.textContent = plank[side];
+        } else {
+          btn.textContent = "?";
+          if (idx === state.activeIndex) {
+            btn.classList.add("selected-slot");
+          }
+          btn.addEventListener("click", () => {
+            state.activeIndex = idx;
+            renderPlanks();
+            renderDots();
+          });
+        }
+        return btn;
+      }
+
+      function renderDots() {
+        if (!state.showDots) {
+          dotsHelperEl.classList.add("hidden");
+          return;
+        }
+        dotsHelperEl.classList.remove("hidden");
+        dotsHelperEl.innerHTML = "";
+
+        const p = state.planks[state.activeIndex];
+        if (!p) return;
+
+        const makeDots = (count, cls) => {
+          for (let i = 0; i < count; i++) {
+            const d = document.createElement("span");
+            d.className = `dot ${cls}`;
+            dotsHelperEl.appendChild(d);
+          }
+        };
+
+        if (p.solved || p.missing !== "a") {
+          makeDots(p.a, "group-a");
+        } else {
+          makeDots(p.a, "mystery");
+        }
+
+        const plus = document.createElement("span");
+        plus.className = "dots-plus";
+        plus.textContent = "+";
+        dotsHelperEl.appendChild(plus);
+
+        if (p.solved || p.missing !== "b") {
+          makeDots(p.b, "group-b");
+        } else {
+          makeDots(p.b, "mystery");
+        }
+      }
+
+      function renderKeypad() {
+        keypadEl.innerHTML = "";
+        for (let n = 0; n <= 10; n++) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "key-btn";
+          btn.textContent = n;
+          btn.addEventListener("click", () => submitAnswer(n));
+          keypadEl.appendChild(btn);
+        }
+      }
+
+      function getActiveTarget() {
+        const p = state.planks[state.activeIndex];
+        return state.randomMode && p ? p.target : state.target;
+      }
+
+      function renderTexts() {
+        const t = I18N[state.lang];
+        document.getElementById("app-title").textContent = t.title;
+        document.querySelectorAll("[data-i18n]").forEach((el) => {
+          const key = el.getAttribute("data-i18n");
+          if (typeof t[key] === "string") el.textContent = t[key];
+        });
+        celebrationTitleEl.textContent = t.celebrationTitle;
+        celebrationSubEl.textContent = state.randomMode
+          ? t.celebrationSubRandom(state.planks.length)
+          : t.celebrationSub(state.target);
+
+        if (state.mode === "single") {
+          statusHintEl.textContent = `${t.singleProgress(state.singleIndex + 1, state.planks.length)} — ${t.hint}`;
+        } else {
+          statusHintEl.textContent = t.hint;
+        }
+        renderCelebrationStats();
+      }
+
+      function renderAll() {
+        const activeTarget = getActiveTarget();
+        targetNumberEl.textContent = activeTarget;
+        const pair = CRITTERS[(activeTarget - 1) % CRITTERS.length];
+        critterLeftEl.textContent = pair[0];
+        critterRightEl.textContent = pair[1];
+
+        modeHouseBtn.classList.toggle("active", state.mode === "house");
+        modeSingleBtn.classList.toggle("active", state.mode === "single");
+        dotsBtn.classList.toggle("active", state.showDots);
+        statsBtn.classList.toggle("active", state.showStats);
+        soundBtn.classList.toggle("active", state.sound);
+        soundBtn.textContent = state.sound ? "🔊" : "🔇";
+
+        renderNumberBar();
+        renderRangeBar();
+        renderPlanks();
+        renderDots();
+        renderTexts();
+      }
+
+      function playDogeVoice(mood) {
+        if (!state.sound) return;
+        // 1. Synthesized doggy bark / whimper
+        try {
+          if (!audioCtx) {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (Ctx) audioCtx = new Ctx();
+          }
+          if (audioCtx) {
+            if (audioCtx.state === "suspended") audioCtx.resume();
+            const now = audioCtx.currentTime;
+            if (mood === "dance") {
+              // Cheerful double "woof! woof!"
+              [0, 0.16].forEach((offset) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = "triangle";
+                osc.frequency.setValueAtTime(340, now + offset);
+                osc.frequency.exponentialRampToValueAtTime(520, now + offset + 0.06);
+                osc.frequency.exponentialRampToValueAtTime(260, now + offset + 0.12);
+                gain.gain.setValueAtTime(0.18, now + offset);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.13);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now + offset);
+                osc.stop(now + offset + 0.13);
+              });
+            } else {
+              // Soft sad puppy whimper
+              const osc = audioCtx.createOscillator();
+              const gain = audioCtx.createGain();
+              osc.type = "sine";
+              osc.frequency.setValueAtTime(460, now);
+              osc.frequency.exponentialRampToValueAtTime(210, now + 0.42);
+              gain.gain.setValueAtTime(0.14, now);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+              osc.connect(gain);
+              gain.connect(audioCtx.destination);
+              osc.start(now);
+              osc.stop(now + 0.45);
+            }
+          }
+        } catch (_) {}
+
+        // 2. Spoken voice reaction (Web Speech API)
+        try {
+          if ("speechSynthesis" in window) {
+            window.speechSynthesis.cancel();
+            const lines = {
+              en: {
+                dance: ["Woof woof! Awesome!", "Yay! Much smart!", "Good job! Woof!"],
+                cry: ["Oh no, try again!", "Woof... almost!", "Oops! Try again!"]
+              },
+              hu: {
+                dance: ["Vau vau! Ügyes vagy!", "Szuper! Nagyon jó!", "Hurrá! Ügyes!"],
+                cry: ["Jaj ne, próbáld újra!", "Majdnem, vau!", "Hoppá, még egyszer!"]
+              }
+            };
+            const pool = lines[state.lang][mood];
+            const text = pool[Math.floor(Math.random() * pool.length)];
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = state.lang === "hu" ? "hu-HU" : "en-US";
+            utter.pitch = mood === "dance" ? 1.35 : 0.95;
+            utter.rate = mood === "dance" ? 1.08 : 0.95;
+            window.speechSynthesis.speak(utter);
+          }
+        } catch (_) {}
+      }
+
+      function maybeShowDoge(mood) {
+        if (Math.random() > 0.6) return;
+        const el = document.getElementById("doge-popup");
+        if (!el) return;
+
+        if (el._hideTimer) clearTimeout(el._hideTimer);
+
+        const isDance = mood === "dance";
+        const badge = isDance ? "🎵🎶" : "💧😢";
+        const eyesAndMouth = isDance
+          ? `
+            <path d="M36 48 Q41 42 46 48" fill="none" stroke="#2c1e12" stroke-width="3" stroke-linecap="round"/>
+            <path d="M58 48 Q63 42 68 48" fill="none" stroke="#2c1e12" stroke-width="3" stroke-linecap="round"/>
+            <path d="M44 62 Q52 70 60 62" fill="none" stroke="#2c1e12" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M49 65 Q52 75 55 65 Z" fill="#ff6b81"/>
+          `
+          : `
+            <line x1="34" y1="41" x2="45" y2="44" stroke="#2c1e12" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="70" y1="41" x2="59" y2="44" stroke="#2c1e12" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="41" cy="48" r="3.6" fill="#2c1e12"/>
+            <circle cx="63" cy="48" r="3.6" fill="#2c1e12"/>
+            <circle cx="40" cy="47" r="1.3" fill="#fff"/>
+            <circle cx="62" cy="47" r="1.3" fill="#fff"/>
+            <path class="tear-drop" d="M38 53 C35 58 41 61 41 56 Z" fill="#4cc9f0"/>
+            <path class="tear-drop right" d="M66 53 C63 58 69 61 69 56 Z" fill="#4cc9f0"/>
+            <path d="M46 66 Q52 60 58 66" fill="none" stroke="#2c1e12" stroke-width="2.5" stroke-linecap="round"/>
+          `;
+
+        el.innerHTML = `
+          <div class="doge-badge">${badge}</div>
+          <svg viewBox="0 0 104 104" width="220" height="220">
+            <!-- Ears -->
+            <polygon points="24,38 30,12 45,30" fill="#e5a94c" stroke="#6b4218" stroke-width="3" stroke-linejoin="round"/>
+            <polygon points="29,34 33,19 41,29" fill="#f7b2bd"/>
+            <polygon points="80,38 74,12 59,30" fill="#e5a94c" stroke="#6b4218" stroke-width="3" stroke-linejoin="round"/>
+            <polygon points="75,34 71,19 63,29" fill="#f7b2bd"/>
+            <!-- Body -->
+            <ellipse cx="52" cy="84" rx="22" ry="16" fill="#e5a94c" stroke="#6b4218" stroke-width="3"/>
+            <ellipse cx="52" cy="86" rx="13" ry="11" fill="#fff3d6"/>
+            <!-- Collar -->
+            <path d="M35 73 Q52 80 69 73" fill="none" stroke="#e63946" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="52" cy="78" r="3.5" fill="#ffd166" stroke="#6b4218" stroke-width="1.5"/>
+            <!-- Head -->
+            <ellipse cx="52" cy="51" rx="27" ry="24" fill="#e5a94c" stroke="#6b4218" stroke-width="3"/>
+            <!-- Cream Cheeks / Muzzle -->
+            <ellipse cx="52" cy="59" rx="19" ry="14" fill="#fff3d6"/>
+            <!-- Nose -->
+            <ellipse cx="52" cy="56" rx="4.5" ry="3.2" fill="#2c1e12"/>
+            ${eyesAndMouth}
+          </svg>
+        `;
+
+        playDogeVoice(mood);
+
+        el.className = `doge-popup ${mood}`;
+        el._hideTimer = setTimeout(() => {
+          el.classList.add("hidden");
+        }, 1700);
+      }
+
+      function submitAnswer(val) {
+        const p = state.planks[state.activeIndex];
+        if (!p || p.solved) return;
+
+        state.attempts++;
+        const expected = p[p.missing];
+        if (val === expected) {
+          p.solved = true;
+          playSuccess();
+          maybeShowDoge("dance");
+
+          if (state.mode === "single") {
+            renderPlanks();
+            renderDots();
+            if (state.singleIndex < state.planks.length - 1) {
+              setTimeout(() => {
+                state.singleIndex++;
+                state.activeIndex = state.singleIndex;
+                renderAll();
+              }, 420);
+            } else {
+              finishHouse();
+            }
+          } else {
+            const nextUnsolved = state.planks.findIndex((item) => !item.solved);
+            if (nextUnsolved !== -1) {
+              state.activeIndex = nextUnsolved;
+              renderPlanks();
+              renderDots();
+              const nextEl = planksGridEl.querySelector(`[data-index="${nextUnsolved}"]`);
+              if (nextEl) nextEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            } else {
+              renderPlanks();
+              renderDots();
+              finishHouse();
+            }
+          }
+        } else {
+          state.mistakes++;
+          playTryAgain();
+          maybeShowDoge("cry");
+          const plankEl = planksGridEl.querySelector(`[data-index="${state.activeIndex}"]`);
+          if (plankEl) {
+            plankEl.classList.remove("shake");
+            void plankEl.offsetWidth;
+            plankEl.classList.add("shake");
+          }
+        }
+      }
+
+      const DANCING_POOL = ["🦉", "🦊", "🐰", "🐼", "🦁", "🦄"];
+
+      function getDancingAnimalCount(accuracy) {
+        if (accuracy === 100) return 6;
+        if (accuracy >= 90) return 5;
+        if (accuracy >= 80) return 4;
+        if (accuracy >= 65) return 3;
+        if (accuracy >= 50) return 2;
+        return 1;
+      }
+
+      function renderCelebrationStats() {
+        const stats = state.lastRoundStats;
+        if (!state.showStats || !stats) {
+          celebrationEmojiEl.classList.remove("hidden");
+          dancingAnimalsEl.classList.add("hidden");
+          celebrationStatsEl.classList.add("hidden");
+          return;
+        }
+
+        celebrationEmojiEl.classList.add("hidden");
+        dancingAnimalsEl.classList.remove("hidden");
+        celebrationStatsEl.classList.remove("hidden");
+
+        const count = getDancingAnimalCount(stats.accuracy);
+        dancingAnimalsEl.innerHTML = "";
+        for (let i = 0; i < count; i++) {
+          const span = document.createElement("span");
+          span.className = "dancing-animal";
+          span.textContent = DANCING_POOL[i % DANCING_POOL.length];
+          span.style.animationDelay = `${i * 0.11}s`;
+          dancingAnimalsEl.appendChild(span);
+        }
+
+        const t = I18N[state.lang];
+        const mins = Math.floor(stats.elapsedSec / 60);
+        const secs = stats.elapsedSec % 60;
+        const timeStr = mins > 0 ? `${mins}:${String(secs).padStart(2, "0")}` : `${secs}s`;
+
+        celebrationStatsEl.innerHTML = `
+          <div class="stat-pill">
+            <span class="stat-value">${stats.accuracy}%</span>
+            <span class="stat-label">${t.statAccuracy}</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-value">${stats.mistakes}</span>
+            <span class="stat-label">${t.statMistakes}</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-value">${timeStr}</span>
+            <span class="stat-label">${t.statTime}</span>
+          </div>
+        `;
+      }
+
+      function finishHouse() {
+        if (!state.randomMode) {
+          state.completed.add(state.target);
+          saveCompleted();
+          renderNumberBar();
+        }
+        const totalTasks = state.planks.length;
+        const accuracy = state.attempts > 0 ? Math.round((totalTasks / state.attempts) * 100) : 100;
+        const elapsedSec = Math.max(1, Math.round((Date.now() - state.startTime) / 1000));
+        state.lastRoundStats = {
+          accuracy,
+          mistakes: state.mistakes,
+          elapsedSec
+        };
+
+        playFanfare();
+        launchConfetti();
+        const activeTarget = getActiveTarget();
+        const pair = CRITTERS[(activeTarget - 1) % CRITTERS.length];
+        celebrationEmojiEl.textContent = `${pair[0]}🌟${pair[1]}`;
+        nextNumBtn.style.display = state.randomMode ? "none" : "";
+        renderTexts();
+        setTimeout(() => {
+          celebrationEl.classList.remove("hidden");
+        }, 350);
+      }
+
+      // Simple confetti burst
+      function launchConfetti() {
+        const canvas = document.getElementById("confetti-canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const colors = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#ffffff"];
+        const pieces = Array.from({ length: 75 }, () => ({
+          x: Math.random() * canvas.width,
+          y: -20 - Math.random() * 140,
+          w: 8 + Math.random() * 6,
+          h: 8 + Math.random() * 6,
+          vx: (Math.random() - 0.5) * 4,
+          vy: 3 + Math.random() * 4,
+          rot: Math.random() * Math.PI * 2,
+          color: colors[Math.floor(Math.random() * colors.length)]
+        }));
+
+        let frames = 0;
+        function tick() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          pieces.forEach((p) => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.rot += 0.08;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.restore();
+          });
+          frames++;
+          if (frames < 110) {
+            requestAnimationFrame(tick);
+          } else {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+
+      // Event Listeners
+      modeHouseBtn.addEventListener("click", () => {
+        if (state.mode === "house") return;
+        state.mode = "house";
+        selectTarget(state.target);
+      });
+
+      modeSingleBtn.addEventListener("click", () => {
+        if (state.mode === "single") return;
+        state.mode = "single";
+        selectTarget(state.target);
+      });
+
+      rangeBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          startRandomSingle(btn.dataset.range);
+        });
+      });
+
+      dotsBtn.addEventListener("click", () => {
+        state.showDots = !state.showDots;
+        dotsBtn.classList.toggle("active", state.showDots);
+        renderDots();
+      });
+
+      statsBtn.addEventListener("click", () => {
+        state.showStats = !state.showStats;
+        statsBtn.classList.toggle("active", state.showStats);
+        renderCelebrationStats();
+      });
+
+      soundBtn.addEventListener("click", () => {
+        state.sound = !state.sound;
+        renderAll();
+      });
+
+      replayBtn.addEventListener("click", () => {
+        if (state.randomMode) {
+          startRandomSingle();
+        } else {
+          selectTarget(state.target);
+        }
+      });
+
+      nextNumBtn.addEventListener("click", () => {
+        const next = state.target < 10 ? state.target + 1 : 1;
+        selectTarget(next);
+      });
+
+      // Keyboard support (0-9) + 10 via typing '1' then '0'
+      let pendingOne = false;
+      window.addEventListener("keydown", (e) => {
+        if (!celebrationEl.classList.contains("hidden")) return;
+        if (e.key >= "0" && e.key <= "9") {
+          const digit = Number(e.key);
+          const activeTarget = getActiveTarget();
+          if (pendingOne && digit === 0 && activeTarget === 10) {
+            pendingOne = false;
+            submitAnswer(10);
+            return;
+          }
+          if (digit === 1 && activeTarget === 10) {
+            const p = state.planks[state.activeIndex];
+            if (p && p[p.missing] === 10) {
+              pendingOne = true;
+              setTimeout(() => {
+                if (pendingOne) {
+                  pendingOne = false;
+                  submitAnswer(1);
+                }
+              }, 350);
+              return;
+            }
+          }
+          pendingOne = false;
+          submitAnswer(digit);
+        }
+      });
+
+      // Init
+      renderKeypad();
+      selectTarget(2);
+    })();
+  </script>
+</body>
+</html>
