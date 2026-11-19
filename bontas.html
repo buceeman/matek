@@ -868,6 +868,7 @@
       <button class="pill-btn" id="mode-single-btn" type="button">🎯 <span data-i18n="modeSingle">Egyesével</span></button>
       <button class="pill-btn active" id="dots-btn" type="button">🔴 <span data-i18n="dots">Pöttyök</span></button>
       <button class="pill-btn active" id="stats-btn" type="button">📊 <span data-i18n="stats">Statisztika</span></button>
+      <button class="pill-btn active" id="tts-btn" type="button" aria-pressed="true" title="Motiváló hangosbemondó">🗣️ <span data-i18n="tts">Beszéd</span></button>
       <button class="pill-btn active" id="sound-btn" type="button">🔊</button>
     </div>
   </header>
@@ -978,6 +979,7 @@
           statAccuracy: "Accuracy",
           statMistakes: "Mistakes",
           statTime: "Time",
+          tts: "Voice",
           random: "🎲"
         },
         hu: {
@@ -997,7 +999,8 @@
           stats: "Statisztika",
           statAccuracy: "Pontosság",
           statMistakes: "Hibák",
-          statTime: "Idő"
+          statTime: "Idő",
+          tts: "Beszéd"
         }
       };
 
@@ -1038,11 +1041,13 @@
         showDots: true,
         showStats: true,
         sound: true,
+        tts: true,
         planks: [],
         activeIndex: 0,
         singleIndex: 0,
         attempts: 0,
         mistakes: 0,
+        streak: 0,
         startTime: Date.now(),
         lastRoundStats: null,
         completed: loadCompleted()
@@ -1070,9 +1075,32 @@
       const modeSingleBtn = document.getElementById("mode-single-btn");
       const dotsBtn = document.getElementById("dots-btn");
       const statsBtn = document.getElementById("stats-btn");
+      const ttsBtn = document.getElementById("tts-btn");
       const soundBtn = document.getElementById("sound-btn");
       const replayBtn = document.getElementById("replay-btn");
       const nextNumBtn = document.getElementById("next-num-btn");
+
+      function speakMotivation(text, opts = {}) {
+        if (!state.sound || !state.tts || !text) return;
+        try {
+          if (!("speechSynthesis" in window)) return;
+          const clean = String(text)
+            .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, "")
+            .replace(/\s+/g, " ")
+            .trim();
+          if (!clean) return;
+          window.speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(clean);
+          const targetLang = state.lang === "hu" ? "hu-HU" : "en-US";
+          utter.lang = targetLang;
+          const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+          const match = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith(state.lang));
+          if (match) utter.voice = match;
+          utter.pitch = opts.pitch ?? 1.12;
+          utter.rate = opts.rate ?? 1.02;
+          window.speechSynthesis.speak(utter);
+        } catch (_) {}
+      }
 
       // Web Audio helper
       let audioCtx = null;
@@ -1398,6 +1426,8 @@
         statsBtn.classList.toggle("active", state.showStats);
         soundBtn.classList.toggle("active", state.sound);
         soundBtn.textContent = state.sound ? "🔊" : "🔇";
+        ttsBtn.classList.toggle("active", state.tts && state.sound);
+        ttsBtn.setAttribute("aria-pressed", String(state.tts));
 
         renderNumberBar();
         renderRangeBar();
@@ -1406,9 +1436,40 @@
         renderTexts();
       }
 
+      const PRAISE_LINES = {
+        hu: [
+          "Ügyes vagy!",
+          "Szuper!",
+          "Telitalálat!",
+          "Nagyon jó!",
+          "Csak így tovább!",
+          "Igazi matekzseni vagy!"
+        ],
+        en: [
+          "Awesome!",
+          "Great job!",
+          "You got it!",
+          "Super smart!",
+          "Keep going!"
+        ]
+      };
+
+      function getStreakLine(streak) {
+        if (state.lang === "hu") {
+          if (streak === 3) return "Három egymás után! Fantasztikus!";
+          if (streak === 5) return "Ötös sorozat! Megállíthatatlan vagy!";
+          if (streak === 8) return "Nyolc jó válasz zsinórban! Elképesztő!";
+          if (streak > 0 && streak % 5 === 0) return `${streak} egymás után! Szuper vagy!`;
+        } else {
+          if (streak === 3) return "Three in a row! Fantastic!";
+          if (streak === 5) return "Five streak! Unstoppable!";
+        }
+        return null;
+      }
+
       function playDogeVoice(mood) {
         if (!state.sound) return;
-        // 1. Synthesized doggy bark / whimper
+        // Synthesized doggy bark / whimper
         try {
           if (!audioCtx) {
             const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -1447,30 +1508,6 @@
               osc.start(now);
               osc.stop(now + 0.45);
             }
-          }
-        } catch (_) {}
-
-        // 2. Spoken voice reaction (Web Speech API)
-        try {
-          if ("speechSynthesis" in window) {
-            window.speechSynthesis.cancel();
-            const lines = {
-              en: {
-                dance: ["Woof woof! Awesome!", "Yay! Much smart!", "Good job! Woof!"],
-                cry: ["Oh no, try again!", "Woof... almost!", "Oops! Try again!"]
-              },
-              hu: {
-                dance: ["Vau vau! Ügyes vagy!", "Szuper! Nagyon jó!", "Hurrá! Ügyes!"],
-                cry: ["Jaj ne, próbáld újra!", "Majdnem, vau!", "Hoppá, még egyszer!"]
-              }
-            };
-            const pool = lines[state.lang][mood];
-            const text = pool[Math.floor(Math.random() * pool.length)];
-            const utter = new SpeechSynthesisUtterance(text);
-            utter.lang = state.lang === "hu" ? "hu-HU" : "en-US";
-            utter.pitch = mood === "dance" ? 1.35 : 0.95;
-            utter.rate = mood === "dance" ? 1.08 : 0.95;
-            window.speechSynthesis.speak(utter);
           }
         } catch (_) {}
       }
@@ -1543,8 +1580,20 @@
         const expected = p[p.missing];
         if (val === expected) {
           p.solved = true;
+          state.streak++;
           playSuccess();
           maybeShowDoge("dance");
+
+          const isLastHouse = state.mode === "single"
+            ? state.singleIndex >= state.planks.length - 1
+            : state.planks.every((item) => item.solved);
+
+          if (!isLastHouse) {
+            const streakMsg = getStreakLine(state.streak);
+            const pool = PRAISE_LINES[state.lang] || PRAISE_LINES.hu;
+            const praise = streakMsg || pool[Math.floor(Math.random() * pool.length)];
+            speakMotivation(praise);
+          }
 
           if (state.mode === "single") {
             renderPlanks();
@@ -1574,6 +1623,7 @@
           }
         } else {
           state.mistakes++;
+          state.streak = 0;
           playTryAgain();
           maybeShowDoge("cry");
           const plankEl = planksGridEl.querySelector(`[data-index="${state.activeIndex}"]`);
@@ -1662,6 +1712,16 @@
         celebrationEmojiEl.textContent = `${pair[0]}🌟${pair[1]}`;
         nextNumBtn.style.display = state.randomMode ? "none" : "";
         renderTexts();
+
+        const roundMsg = state.lang === "hu"
+          ? (state.randomMode
+              ? "Hurrá! Mind a tíz véletlen feladat kész! Nagyon ügyes vagy!"
+              : accuracy === 100
+                ? `Hibátlan! Kész lett a ${activeTarget}-es számházikó! Szuper vagy!`
+                : `Hurrá! Kész lett a ${activeTarget}-es számházikó! Ügyes vagy!`)
+          : "Awesome job! You finished the Number Treehouse!";
+        speakMotivation(roundMsg, { pitch: 1.15 });
+
         setTimeout(() => {
           celebrationEl.classList.remove("hidden");
         }, 350);
@@ -1740,8 +1800,22 @@
         renderCelebrationStats();
       });
 
+      ttsBtn.addEventListener("click", () => {
+        state.tts = !state.tts;
+        if (!state.tts && "speechSynthesis" in window) {
+          try { window.speechSynthesis.cancel(); } catch (_) {}
+        }
+        renderAll();
+        if (state.tts && state.sound) {
+          speakMotivation("Hangosbemondó bekapcsolva!");
+        }
+      });
+
       soundBtn.addEventListener("click", () => {
         state.sound = !state.sound;
+        if (!state.sound && "speechSynthesis" in window) {
+          try { window.speechSynthesis.cancel(); } catch (_) {}
+        }
         renderAll();
       });
 

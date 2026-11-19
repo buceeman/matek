@@ -604,6 +604,7 @@
       <div class="top-controls">
         <a href="index.html" class="icon-pill" style="text-decoration: none;" title="Vissza a főoldalra">🏠 Főoldal</a>
         <button id="toggle-helper" class="icon-pill" title="Számolós képek mutatása vagy elrejtése">🍓 Pöttyök: BE</button>
+        <button id="toggle-tts" class="icon-pill" title="Motiváló hangosbemondó be vagy ki" aria-pressed="true">🗣️ Beszéd: BE</button>
         <button id="toggle-sound" class="icon-pill" title="Hang be vagy ki">🔊</button>
       </div>
     </div>
@@ -699,6 +700,7 @@
       let buddy = "🦖";
       let showHelper = true;
       let soundOn = true;
+      let ttsOn = true;
       let step = 0;
       let streak = 0;
       let locked = false;
@@ -725,11 +727,33 @@
       const stickerLabelEl = document.getElementById("sticker-label");
       const stickerListEl = document.getElementById("sticker-list");
       const toggleHelperBtn = document.getElementById("toggle-helper");
+      const toggleTtsBtn = document.getElementById("toggle-tts");
       const toggleSoundBtn = document.getElementById("toggle-sound");
       const modalEl = document.getElementById("modal");
       const modalEmojiEl = document.getElementById("modal-emoji");
       const modalTextEl = document.getElementById("modal-text");
       const playAgainBtn = document.getElementById("play-again-btn");
+
+      function speakMotivation(text, opts = {}) {
+        if (!soundOn || !ttsOn || !text) return;
+        try {
+          if (!("speechSynthesis" in window)) return;
+          const clean = String(text)
+            .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, "")
+            .replace(/\s+/g, " ")
+            .trim();
+          if (!clean) return;
+          window.speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(clean);
+          utter.lang = "hu-HU";
+          const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+          const match = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("hu"));
+          if (match) utter.voice = match;
+          utter.pitch = opts.pitch ?? 1.12;
+          utter.rate = opts.rate ?? 1.02;
+          window.speechSynthesis.speak(utter);
+        } catch (_) {}
+      }
 
       // Web Audio Synthesizer (zero external assets)
       let audioCtx = null;
@@ -995,13 +1019,22 @@
           step++;
           answerBoxEl.textContent = val;
           answerBoxEl.classList.add("correct");
-          speechEl.textContent = PRAISE[randInt(0, PRAISE.length - 1)];
+          const praiseText = PRAISE[randInt(0, PRAISE.length - 1)];
+          speechEl.textContent = praiseText;
           buddyAvatarEl.classList.remove("sad");
           buddyAvatarEl.textContent = buddy === "🐱" ? "😸" : buddy;
           animateBuddy("happy");
           playCorrectSound();
           launchConfetti(streak >= 3 ? 55 : 22);
           renderProgress();
+
+          if (step < ROUND_LENGTH) {
+            let spoken = praiseText;
+            if (streak === 3) spoken = "Három jó válasz egymás után! Szuper vagy!";
+            else if (streak === 5) spoken = "Ötös sorozat! Igazi matekzseni vagy!";
+            else if (streak === 8) spoken = "Nyolc egymás után! Megállíthatatlan vagy!";
+            speakMotivation(spoken);
+          }
 
           setTimeout(() => {
             if (step >= ROUND_LENGTH) {
@@ -1041,6 +1074,7 @@
         modalEmojiEl.textContent = `${buddy} ${newSticker}`;
         modalTextEl.textContent = `Megoldottál ${ROUND_LENGTH} matekfeladatot és nyertél egy ${newSticker} matricát!`;
         modalEl.classList.add("open");
+        speakMotivation(`Gratulálok! Megoldottál ${ROUND_LENGTH} feladatot és nyertél egy új matricát!`, { pitch: 1.15 });
       }
 
       // Event Listeners
@@ -1088,9 +1122,23 @@
         renderHelper();
       });
 
+      toggleTtsBtn.addEventListener("click", () => {
+        ttsOn = !ttsOn;
+        toggleTtsBtn.textContent = ttsOn ? "🗣️ Beszéd: BE" : "🗣️ Beszéd: KI";
+        toggleTtsBtn.setAttribute("aria-pressed", String(ttsOn));
+        if (!ttsOn && "speechSynthesis" in window) {
+          try { window.speechSynthesis.cancel(); } catch (_) {}
+        } else if (ttsOn && soundOn) {
+          speakMotivation("Hangosbemondó bekapcsolva!");
+        }
+      });
+
       toggleSoundBtn.addEventListener("click", () => {
         soundOn = !soundOn;
         toggleSoundBtn.textContent = soundOn ? "🔊" : "🔇";
+        if (!soundOn && "speechSynthesis" in window) {
+          try { window.speechSynthesis.cancel(); } catch (_) {}
+        }
       });
 
       numpadEl.addEventListener("click", (e) => {

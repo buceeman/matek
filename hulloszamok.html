@@ -600,6 +600,7 @@
       </div>
 
       <div class="top-right">
+        <button class="pill sound-on" id="tts-btn" type="button" aria-pressed="true" title="Motiváló hangosbemondó">🗣️ Beszéd: BE</button>
         <button class="pill sound-on" id="sound-btn" type="button" aria-pressed="true">🔊 Hang: BE</button>
       </div>
     </div>
@@ -700,6 +701,7 @@
       range: "1-10",     // 1-10 | 10-20 | all
       speed: "normal",   // slow | normal | fast
       sound: true,
+      tts: true,
       paused: false,
       finished: false,
       taskIndex: 1,
@@ -756,8 +758,30 @@
     const mascotMsg = document.getElementById("mascot-msg");
     const pauseOverlay = document.getElementById("pause-overlay");
     const pauseBtn = document.getElementById("pause-btn");
+    const ttsBtn = document.getElementById("tts-btn");
     const resultsOverlay = document.getElementById("results-overlay");
     const danceStage = document.getElementById("dance-stage");
+
+    function speakMotivation(text, opts = {}) {
+      if (!state.sound || !state.tts || !text) return;
+      try {
+        if (!("speechSynthesis" in window)) return;
+        const clean = String(text)
+          .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (!clean) return;
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(clean);
+        utter.lang = "hu-HU";
+        const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+        const match = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("hu"));
+        if (match) utter.voice = match;
+        utter.pitch = opts.pitch ?? 1.12;
+        utter.rate = opts.rate ?? 1.02;
+        window.speechSynthesis.speak(utter);
+      } catch (_) {}
+    }
 
     // --- Web Audio ---
     let audioCtx = null;
@@ -1008,6 +1032,14 @@
         mascotMsg.textContent = msg;
         showToast(cx, cy, `+${10 + (state.streak - 1) * 2} ⭐`);
 
+        if (state.taskIndex < TOTAL_TASKS) {
+          let spoken = msg;
+          if (state.streak === 3) spoken = "Három egymás után! Villámgyors vagy!";
+          else if (state.streak === 5) spoken = "Ötös sorozat! Elképesztő vagy!";
+          else if (state.streak === 8) spoken = "Nyolc jó válasz zsinórban! Szuper!";
+          speakMotivation(spoken);
+        }
+
         setTimeout(() => {
           if (state.taskIndex >= TOTAL_TASKS) {
             showResults();
@@ -1147,6 +1179,7 @@
       burstConfetti(window.innerWidth / 2, window.innerHeight * 0.35, 70);
       playWinSound();
       setTimeout(() => playWinSound(), 260);
+      speakMotivation(`${title} ${sub}`, { pitch: 1.15 });
     }
 
     function startNewRound() {
@@ -1195,11 +1228,27 @@
 
     document.getElementById("replay-btn").addEventListener("click", startNewRound);
 
+    ttsBtn.addEventListener("click", () => {
+      state.tts = !state.tts;
+      ttsBtn.textContent = state.tts ? "🗣️ Beszéd: BE" : "🗣️ Beszéd: KI";
+      ttsBtn.classList.toggle("sound-on", state.tts && state.sound);
+      ttsBtn.setAttribute("aria-pressed", String(state.tts));
+      if (!state.tts && "speechSynthesis" in window) {
+        try { window.speechSynthesis.cancel(); } catch (_) {}
+      } else if (state.tts && state.sound) {
+        speakMotivation("Hangosbemondó bekapcsolva!");
+      }
+    });
+
     document.getElementById("sound-btn").addEventListener("click", (e) => {
       state.sound = !state.sound;
       e.currentTarget.textContent = state.sound ? "🔊 Hang: BE" : "🔇 Hang: KI";
       e.currentTarget.classList.toggle("sound-on", state.sound);
       e.currentTarget.setAttribute("aria-pressed", String(state.sound));
+      ttsBtn.classList.toggle("sound-on", state.tts && state.sound);
+      if (!state.sound && "speechSynthesis" in window) {
+        try { window.speechSynthesis.cancel(); } catch (_) {}
+      }
       if (state.sound) playTone(560, 0.08, "triangle");
     });
 
