@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Űrlépcső! — Növekvő és Csökkenő Számok</title>
+  <style>
+    :root {
+      --ink: #232946;
+      --space-top: #1b224b;
+      --space-mid: #3a4f9b;
+      --space-low: #6ec6ff;
+      --card: #ffffff;
+      --yellow: #ffd93d;
+      --coral: #ff6b6b;
+      --coral-dark: #d94848;
+      --mint: #4ecdc4;
+      --mint-dark: #2ea89f;
+      --green: #51cf66;
+      --green-dark: #37b24d;
+      --purple: #9b5de5;
+      --purple-dark: #7538c2;
+      --blue: #4dabf7;
+      --muted: #5c647d;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: "Comic Sans MS", "Chalkboard SE", "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      overflow-x: hidden;
+    }
+
+    body {
+      min-height: 100dvh;
+      background: linear-gradient(180deg, var(--space-top) 0%, var(--space-mid) 45%, var(--space-low) 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 10px 12px 18px;
+      position: relative;
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 90;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 780px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Top bar */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .top-left, .top-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      appearance: none;
+      text-decoration: none;
+      border: 2.5px solid var(--ink);
+      background: rgba(255, 255, 255, 0.95);
+      color: var(--ink);
+      font-family: inherit;
+      font-weight: 800;
+      font-size: clamp(0.76rem, 2.2vw, 0.9rem);
+      padding: 6px 11px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 3px 0 var(--ink);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: transform 0.1s ease, background 0.15s ease;
+    }
+
+    .pill:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 var(--ink);
+    }
+
+    .pill.active-on {
+      background: var(--mint);
+    }
+
+    /* Settings bar */
+    .settings-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .opt-group {
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 100%;
+      background: rgba(255, 255, 255, 0.88);
+      border: 2.5px solid var(--ink);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 3px;
+      box-shadow: 0 3px 0 rgba(35, 41, 70, 0.25);
+    }
+
+    .opt-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      font-family: inherit;
+      font-weight: 800;
+      font-size: clamp(0.74rem, 2.1vw, 0.88rem);
+      padding: 5px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .opt-btn.active {
+      background: var(--ink);
+      color: #ffffff;
+    }
+
+    .opt-btn[data-range].active {
+      background: var(--purple);
+      color: #ffffff;
+    }
+
+    @media (hover: hover) {
+      .pill:hover {
+        background: #fff9db;
+      }
+      .opt-btn:hover {
+        background: rgba(35, 41, 70, 0.08);
+      }
+      .opt-btn.active:hover {
+        background: var(--ink);
+      }
+      .opt-btn[data-range].active:hover {
+        background: var(--purple);
+      }
+      .tile-btn:not(:disabled):hover {
+        transform: translateY(-3px);
+        box-shadow: 0 7px 0 var(--ink);
+      }
+      .step-slot.filled:hover {
+        transform: translateY(-2px);
+      }
+    }
+
+    /* Main Card */
+    .game-card {
+      background: var(--card);
+      border: 4px solid var(--ink);
+      border-radius: 28px;
+      padding: 14px;
+      box-shadow: 0 9px 0 var(--ink), 0 18px 34px rgba(15, 20, 50, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Progress & Stats */
+    .stats-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .progress-track {
+      flex: 1 1 180px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: #f4f7ff;
+      border: 2.5px solid var(--ink);
+      border-radius: 999px;
+      padding: 5px 8px;
+    }
+
+    .step-dot {
+      flex: 1;
+      height: 11px;
+      border-radius: 999px;
+      background: #dfe4ea;
+      transition: background 0.25s, transform 0.25s;
+    }
+
+    .step-dot.done {
+      background: var(--green);
+    }
+
+    .step-dot.current {
+      background: var(--yellow);
+      transform: scaleY(1.2);
+    }
+
+    .stat-chips {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .stat-chip {
+      background: #f4f7ff;
+      border: 2.5px solid var(--ink);
+      border-radius: 14px;
+      padding: 4px 10px;
+      font-weight: 900;
+      font-size: clamp(0.8rem, 2.2vw, 0.94rem);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .stat-chip.streak {
+      background: #fff0e6;
+      color: #c94a06;
+    }
+
+    .stat-chip.score {
+      background: #fff9db;
+    }
+
+    /* Direction Banner */
+    .direction-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 3px solid var(--ink);
+      border-radius: 20px;
+      padding: 10px 14px;
+      background: linear-gradient(90deg, #e7f5ff 0%, #f3f0ff 100%);
+    }
+
+    .direction-banner.asc {
+      background: linear-gradient(90deg, #e6fcf5 0%, #d3f9d8 100%);
+    }
+
+    .direction-banner.desc {
+      background: linear-gradient(90deg, #fff0f6 0%, #ffe8cc 100%);
+    }
+
+    .dir-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .dir-icon {
+      font-size: clamp(1.7rem, 5vw, 2.2rem);
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .dir-title {
+      font-size: clamp(1rem, 3.2vw, 1.35rem);
+      font-weight: 900;
+      line-height: 1.15;
+    }
+
+    .dir-sub {
+      font-size: clamp(0.76rem, 2.2vw, 0.9rem);
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .rocket-buddy {
+      font-size: clamp(1.9rem, 5vw, 2.5rem);
+      line-height: 1;
+      flex-shrink: 0;
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .rocket-buddy.launch {
+      transform: translateY(-14px) scale(1.2) rotate(-10deg);
+    }
+
+    /* Staircase Stage */
+    .stairs-stage {
+      background: linear-gradient(180deg, #1f2a5c 0%, #33468f 100%);
+      border: 3.5px solid var(--ink);
+      border-radius: 22px;
+      padding: 14px 10px 12px;
+      position: relative;
+      overflow: hidden;
+      min-height: clamp(150px, 24vh, 210px);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    /* Subtle stars in background */
+    .stairs-stage::before {
+      content: "✦   ✧     ✦       ✧   ✦     ✧";
+      position: absolute;
+      top: 8px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.35);
+      font-size: 0.95rem;
+      letter-spacing: 8px;
+      pointer-events: none;
+    }
+
+    .stairs-grid {
+      display: grid;
+      grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr));
+      align-items: end;
+      gap: clamp(6px, 2vw, 12px);
+      width: 100%;
+      position: relative;
+      z-index: 2;
+      padding-top: 22px;
+    }
+
+    .step-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .step-jumper {
+      font-size: clamp(1.25rem, 3.6vw, 1.65rem);
+      line-height: 1;
+      height: 1.2em;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .step-jumper.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .step-slot {
+      width: 100%;
+      height: var(--step-h, 70px);
+      border: 3px dashed rgba(255, 255, 255, 0.65);
+      border-radius: 16px 16px 10px 10px;
+      background: rgba(255, 255, 255, 0.14);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: clamp(1.35rem, 4.5vw, 2rem);
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .step-slot.next-target {
+      border-color: var(--yellow);
+      background: rgba(255, 217, 61, 0.22);
+      animation: pulseTarget 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulseTarget {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+
+    .step-slot.filled {
+      border-style: solid;
+      border-color: var(--ink);
+      background: #ffffff;
+      color: var(--ink);
+      box-shadow: 0 5px 0 var(--ink);
+      animation: none;
+    }
+
+    .step-slot.correct {
+      background: var(--green);
+      color: #ffffff;
+    }
+
+    .step-slot.wrong {
+      background: var(--coral);
+      color: #ffffff;
+      animation: shake 0.35s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      50% { transform: translateX(6px); }
+      75% { transform: translateX(-4px); }
+    }
+
+    .step-order-num {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    /* Feedback */
+    .feedback-msg {
+      text-align: center;
+      font-size: clamp(0.86rem, 2.5vw, 1rem);
+      font-weight: 800;
+      min-height: 1.35em;
+      color: var(--ink);
+    }
+
+    .feedback-msg.ok {
+      color: var(--green-dark);
+    }
+
+    .feedback-msg.bad {
+      color: var(--coral-dark);
+    }
+
+    /* Number Tiles Tray */
+    .tiles-tray {
+      display: grid;
+      grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr));
+      gap: clamp(6px, 2vw, 10px);
+    }
+
+    .tile-btn {
+      appearance: none;
+      border: 3px solid var(--ink);
+      border-radius: 18px;
+      background: #fff9db;
+      color: var(--ink);
+      font-family: inherit;
+      padding: 8px 4px;
+      min-height: clamp(58px, 12vw, 76px);
+      cursor: pointer;
+      box-shadow: 0 5px 0 var(--ink);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.15s ease;
+    }
+
+    .tile-btn:active:not(:disabled) {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 var(--ink);
+    }
+
+    .tile-btn:disabled {
+      opacity: 0.25;
+      cursor: default;
+      box-shadow: none;
+      transform: translateY(3px);
+    }
+
+    .tile-num {
+      font-size: clamp(1.35rem, 4.5vw, 1.9rem);
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .tile-bar-wrap {
+      width: 80%;
+      height: 7px;
+      background: rgba(35, 41, 70, 0.12);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .tile-bar-wrap.hidden {
+      display: none;
+    }
+
+    .tile-bar-fill {
+      height: 100%;
+      background: var(--purple);
+      border-radius: 999px;
+    }
+
+    .tray-actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .sub-action {
+      appearance: none;
+      border: 2.5px solid var(--ink);
+      background: #f4f7ff;
+      color: var(--ink);
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 0.86rem;
+      padding: 6px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 3px 0 var(--ink);
+    }
+
+    .sub-action:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 var(--ink);
+    }
+
+    /* Celebration Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 26, 56, 0.62);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 80;
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 420px;
+      background: #ffffff;
+      border: 4px solid var(--ink);
+      border-radius: 28px;
+      padding: 24px 20px;
+      text-align: center;
+      box-shadow: 0 10px 0 var(--ink);
+      animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.75); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .dance-stage {
+      background: linear-gradient(180deg, #fff9db 0%, #ffe8cc 100%);
+      border: 3px solid var(--ink);
+      border-radius: 18px;
+      padding: 12px 10px;
+      margin: 12px 0 16px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      font-size: 2.2rem;
+    }
+
+    .dancer {
+      display: inline-block;
+      animation: hop 0.75s ease-in-out infinite alternate;
+    }
+
+    .dancer:nth-child(2) { animation-delay: 0.15s; }
+    .dancer:nth-child(3) { animation-delay: 0.3s; }
+    .dancer:nth-child(4) { animation-delay: 0.45s; }
+
+    @keyframes hop {
+      0% { transform: translateY(0) rotate(-8deg); }
+      100% { transform: translateY(-10px) rotate(8deg) scale(1.08); }
+    }
+
+    .modal-title {
+      margin: 0 0 6px;
+      font-size: 1.65rem;
+      font-weight: 900;
+      color: var(--purple-dark);
+    }
+
+    .modal-text {
+      margin: 0;
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .big-btn {
+      width: 100%;
+      appearance: none;
+      border: 3px solid var(--ink);
+      border-radius: 16px;
+      padding: 12px 18px;
+      font-family: inherit;
+      font-size: 1.1rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 5px 0 var(--ink);
+      background: var(--green);
+      color: #ffffff;
+    }
+
+    .big-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 var(--ink);
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 8px 8px 14px;
+      }
+      .app {
+        gap: 8px;
+      }
+      .opt-group {
+        border-radius: 18px;
+      }
+      .game-card {
+        padding: 10px;
+        border-radius: 22px;
+        gap: 9px;
+      }
+      .direction-banner {
+        padding: 8px 10px;
+      }
+      .stairs-stage {
+        padding: 10px 7px 10px;
+        min-height: 135px;
+      }
+      .step-slot {
+        border-radius: 12px 12px 8px 8px;
+      }
+      .tile-btn {
+        border-radius: 14px;
+        min-height: 54px;
+      }
+    }
+
+    @media (max-width: 370px) {
+      .pill {
+        padding: 5px 8px;
+        font-size: 0.72rem;
+      }
+      .opt-btn {
+        padding: 4px 7px;
+        font-size: 0.72rem;
+      }
+      .step-slot {
+        font-size: 1.2rem;
+      }
+      .tile-num {
+        font-size: 1.25rem;
+      }
+    }
+
+    @media (max-height: 620px) and (orientation: landscape) {
+      .stairs-stage {
+        min-height: 112px;
+        padding: 8px;
+      }
+      .tile-btn {
+        min-height: 46px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <main class="app">
+    <div class="top-bar">
+      <div class="top-left">
+        <a class="pill" href="index.html" title="Vissza a főoldalra">🏠 Főoldal</a>
+        <button class="pill" id="reset-btn" type="button" title="Új kör indítása">🔄 Új kör</button>
+      </div>
+      <div class="top-right">
+        <button class="pill active-on" id="helper-btn" type="button" aria-pressed="true">📊 Méret: BE</button>
+        <button class="pill active-on" id="tts-btn" type="button" aria-pressed="true">🗣️ Beszéd: BE</button>
+        <button class="pill active-on" id="sound-btn" type="button" aria-pressed="true">🔊 Hang: BE</button>
+      </div>
+    </div>
+
+    <div class="settings-bar">
+      <div class="opt-group" role="group" aria-label="Irány">
+        <button class="opt-btn active" data-mode="mix" type="button">🎲 Vegyes</button>
+        <button class="opt-btn" data-mode="asc" type="button">📈 Növekvő</button>
+        <button class="opt-btn" data-mode="desc" type="button">📉 Csökkenő</button>
+      </div>
+
+      <div class="opt-group" role="group" aria-label="Számkör">
+        <button class="opt-btn" data-range="1-5" type="button">1–5</button>
+        <button class="opt-btn active" data-range="1-10" type="button">1–10</button>
+        <button class="opt-btn" data-range="10-20" type="button">10–20</button>
+        <button class="opt-btn" data-range="all" type="button">🌟 Mind</button>
+      </div>
+    </div>
+
+    <section class="game-card">
+      <div class="stats-row">
+        <div class="progress-track" id="progress-track" aria-label="Haladás"></div>
+        <div class="stat-chips">
+          <div class="stat-chip score">⭐ <span id="score-val">0</span></div>
+          <div class="stat-chip streak">🔥 <span id="streak-val">0</span></div>
+        </div>
+      </div>
+
+      <div class="direction-banner asc" id="direction-banner">
+        <div class="dir-left">
+          <div class="dir-icon" id="dir-icon">📈</div>
+          <div>
+            <div class="dir-title" id="dir-title">Növekvő sorrend!</div>
+            <div class="dir-sub" id="dir-sub">Rakd sorba a legkisebbtől a legnagyobbig!</div>
+          </div>
+        </div>
+        <div class="rocket-buddy" id="rocket-buddy">🚀</div>
+      </div>
+
+      <div class="stairs-stage">
+        <div class="stairs-grid" id="stairs-grid"></div>
+      </div>
+
+      <div class="feedback-msg" id="feedback-msg">Koppints a számokra a megfelelő sorrendben!</div>
+
+      <div class="tiles-tray" id="tiles-tray" aria-label="Választható számok"></div>
+
+      <div class="tray-actions">
+        <button class="sub-action" id="clear-slots-btn" type="button">↩️ Lépcső ürítése</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-overlay" id="round-modal">
+    <div class="modal-card">
+      <h2 class="modal-title" id="modal-title">🚀 Szuper űrmisszió!</h2>
+      <p class="modal-text" id="modal-text">Mind a 10 lépcsősort sikeresen kiraktad!</p>
+      <div class="dance-stage" aria-hidden="true">
+        <span class="dancer">🚀</span>
+        <span class="dancer">🧑‍🚀</span>
+        <span class="dancer">🛸</span>
+        <span class="dancer">🌟</span>
+      </div>
+      <button class="big-btn" id="play-again-btn" type="button">Új küldetés! 🚀</button>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const ROUND_LEN = 10;
+      const PRAISE = [
+        "Kilövés sikeres! 🚀",
+        "Szuper sorrend! 🌟",
+        "Űrzseni vagy! 🧑‍🚀",
+        "Telitalálat! 🎉",
+        "Fantasztikus! ✨",
+        "Ügyesen ugráltál a lépcsőn! 🛸"
+      ];
+
+      // State
+      let mode = "mix";      // "mix" | "asc" | "desc"
+      let range = "1-10";    // "1-5" | "1-10" | "10-20" | "all"
+      let showHelper = true;
+      let soundOn = true;
+      let ttsOn = true;
+
+      let stepIdx = 0;
+      let score = 0;
+      let streak = 0;
+      let hadErrorThisRound = false;
+      let locked = false;
+
+      let currentDir = "asc"; // "asc" | "desc"
+      let numbers = [];       // shuffled numbers in tray
+      let expected = [];      // sorted expected numbers
+      let slots = [];         // array of { num, tileIdx } | null
+      let lastKey = "";
+
+      // DOM
+      const progressTrackEl = document.getElementById("progress-track");
+      const scoreValEl = document.getElementById("score-val");
+      const streakValEl = document.getElementById("streak-val");
+      const dirBannerEl = document.getElementById("direction-banner");
+      const dirIconEl = document.getElementById("dir-icon");
+      const dirTitleEl = document.getElementById("dir-title");
+      const dirSubEl = document.getElementById("dir-sub");
+      const rocketBuddyEl = document.getElementById("rocket-buddy");
+      const stairsGridEl = document.getElementById("stairs-grid");
+      const tilesTrayEl = document.getElementById("tiles-tray");
+      const feedbackEl = document.getElementById("feedback-msg");
+      const helperBtn = document.getElementById("helper-btn");
+      const ttsBtn = document.getElementById("tts-btn");
+      const soundBtn = document.getElementById("sound-btn");
+      const resetBtn = document.getElementById("reset-btn");
+      const clearSlotsBtn = document.getElementById("clear-slots-btn");
+      const modalEl = document.getElementById("round-modal");
+      const modalTitleEl = document.getElementById("modal-title");
+      const modalTextEl = document.getElementById("modal-text");
+      const playAgainBtn = document.getElementById("play-again-btn");
+
+      // --- Audio & TTS ---
+      let audioCtx = null;
+      function getAudio() {
+        if (!soundOn) return null;
+        if (!audioCtx) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (Ctx) audioCtx = new Ctx();
+        }
+        if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+        return audioCtx;
+      }
+
+      function playTone(freq, dur = 0.09, type = "sine", delay = 0, vol = 0.12) {
+        const ctx = getAudio();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+        gain.gain.setValueAtTime(vol, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + dur);
+      }
+
+      function playCorrectSound() {
+        playTone(523.25, 0.1, "triangle", 0);
+        playTone(659.25, 0.1, "triangle", 0.08);
+        playTone(783.99, 0.18, "triangle", 0.16);
+      }
+
+      function playWrongSound() {
+        playTone(250, 0.14, "sine", 0, 0.1);
+        playTone(180, 0.2, "sine", 0.1, 0.1);
+      }
+
+      function playFanfare() {
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+          playTone(f, 0.2, "triangle", i * 0.09, 0.14);
+        });
+      }
+
+      function speak(text) {
+        if (!soundOn || !ttsOn || !text) return;
+        try {
+          if (!("speechSynthesis" in window)) return;
+          const clean = String(text)
+            .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, "")
+            .replace(/\s+/g, " ")
+            .trim();
+          if (!clean) return;
+          window.speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(clean);
+          utter.lang = "hu-HU";
+          const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+          const match = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("hu"));
+          if (match) utter.voice = match;
+          utter.pitch = 1.1;
+          utter.rate = 1.02;
+          window.speechSynthesis.speak(utter);
+        } catch (_) {}
+      }
+
+      // --- Confetti ---
+      const confettiCanvas = document.getElementById("confetti-canvas");
+      const cCtx = confettiCanvas.getContext("2d");
+      let confettiPieces = [];
+      let confettiAnimId = null;
+
+      function resizeConfetti() {
+        confettiCanvas.width = window.innerWidth;
+        confettiCanvas.height = window.innerHeight;
+      }
+      resizeConfetti();
+      window.addEventListener("resize", resizeConfetti);
+
+      function burstConfetti(count = 60) {
+        const colors = ["#ff6b6b", "#ffd93d", "#4ecdc4", "#9b5de5", "#6bcb77", "#ffffff"];
+        for (let i = 0; i < count; i++) {
+          confettiPieces.push({
+            x: Math.random() * confettiCanvas.width,
+            y: -10 - Math.random() * 50,
+            w: 7 + Math.random() * 7,
+            h: 5 + Math.random() * 6,
+            vx: (Math.random() - 0.5) * 6,
+            vy: 3 + Math.random() * 4.5,
+            rot: Math.random() * Math.PI * 2,
+            vrot: (Math.random() - 0.5) * 0.2,
+            color: colors[Math.floor(Math.random() * colors.length)]
+          });
+        }
+        if (!confettiAnimId) tickConfetti();
+      }
+
+      function tickConfetti() {
+        cCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        confettiPieces = confettiPieces.filter((p) => p.y < confettiCanvas.height + 20);
+        for (const p of confettiPieces) {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.08;
+          p.rot += p.vrot;
+          cCtx.save();
+          cCtx.translate(p.x, p.y);
+          cCtx.rotate(p.rot);
+          cCtx.fillStyle = p.color;
+          cCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          cCtx.restore();
+        }
+        if (confettiPieces.length > 0) {
+          confettiAnimId = requestAnimationFrame(tickConfetti);
+        } else {
+          confettiAnimId = null;
+        }
+      }
+
+      // --- Helpers ---
+      function getRangeBounds() {
+        if (range === "1-5") return { min: 1, max: 5, count: 4 };
+        if (range === "1-10") return { min: 1, max: 10, count: 5 };
+        if (range === "10-20") return { min: 10, max: 20, count: 5 };
+        return { min: 1, max: 20, count: 5 };
+      }
+
+      function shuffle(arr) {
+        const copy = [...arr];
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+      }
+
+      function renderProgress() {
+        progressTrackEl.innerHTML = "";
+        for (let i = 0; i < ROUND_LEN; i++) {
+          const dot = document.createElement("div");
+          dot.className = "step-dot";
+          if (i < stepIdx) dot.classList.add("done");
+          else if (i === stepIdx) dot.classList.add("current");
+          progressTrackEl.appendChild(dot);
+        }
+        scoreValEl.textContent = String(score);
+        streakValEl.textContent = String(streak);
+      }
+
+      function generateTask() {
+        const bounds = getRangeBounds();
+        const pool = [];
+        for (let n = bounds.min; n <= bounds.max; n++) pool.push(n);
+
+        currentDir = mode === "mix" ? (Math.random() < 0.5 ? "asc" : "desc") : mode;
+
+        let chosen = [];
+        let key = "";
+        for (let attempt = 0; attempt < 20; attempt++) {
+          chosen = shuffle(pool).slice(0, bounds.count);
+          const sorted = [...chosen].sort((a, b) => (currentDir === "asc" ? a - b : b - a));
+          // Ensure tray isn't already in the exact target order
+          numbers = shuffle(chosen);
+          if (numbers.every((v, idx) => v === sorted[idx])) {
+            numbers.reverse();
+          }
+          expected = sorted;
+          key = `${currentDir}:${expected.join(",")}`;
+          if (key !== lastKey) break;
+        }
+        lastKey = key;
+        slots = new Array(bounds.count).fill(null);
+        hadErrorThisRound = false;
+        locked = false;
+
+        // Update direction banner
+        dirBannerEl.className = `direction-banner ${currentDir}`;
+        rocketBuddyEl.classList.remove("launch");
+        if (currentDir === "asc") {
+          dirIconEl.textContent = "📈";
+          dirTitleEl.textContent = "Növekvő sorrend!";
+          dirSubEl.textContent = "Rakd sorba a legkisebbtől a legnagyobbig!";
+          rocketBuddyEl.textContent = "🚀";
+        } else {
+          dirIconEl.textContent = "📉";
+          dirTitleEl.textContent = "Csökkenő sorrend!";
+          dirSubEl.textContent = "Rakd sorba a legnagyobbtól a legkisebbig!";
+          rocketBuddyEl.textContent = "🪂";
+        }
+
+        feedbackEl.className = "feedback-msg";
+        feedbackEl.textContent = "Koppints a számokra a megfelelő sorrendben!";
+
+        renderStage();
+        renderProgress();
+      }
+
+      function renderStage(validationResults = null) {
+        const count = slots.length;
+        stairsGridEl.style.setProperty("--cols", String(count));
+        tilesTrayEl.style.setProperty("--cols", String(count));
+
+        const nextEmptyIdx = slots.findIndex((s) => s === null);
+        const filledCount = slots.filter((s) => s !== null).length;
+        const jumperIdx = filledCount > 0 ? filledCount - 1 : 0;
+
+        stairsGridEl.innerHTML = "";
+        for (let i = 0; i < count; i++) {
+          const col = document.createElement("div");
+          col.className = "step-col";
+
+          const jumper = document.createElement("div");
+          jumper.className = "step-jumper" + (i === jumperIdx && filledCount > 0 ? " active" : "");
+          jumper.textContent = currentDir === "asc" ? "🧑‍🚀" : "🪂";
+          col.appendChild(jumper);
+
+          // Step height visually climbs UP for asc, or slides DOWN for desc
+          const ratio = currentDir === "asc" ? (i + 1) / count : (count - i) / count;
+          const minH = 52;
+          const maxH = 112;
+          const stepH = Math.round(minH + ratio * (maxH - minH));
+
+          const slotBtn = document.createElement("button");
+          slotBtn.type = "button";
+          slotBtn.className = "step-slot";
+          slotBtn.style.setProperty("--step-h", `${stepH}px`);
+
+          const item = slots[i];
+          if (item) {
+            slotBtn.classList.add("filled");
+            slotBtn.textContent = String(item.num);
+            if (validationResults) {
+              slotBtn.classList.add(validationResults[i] ? "correct" : "wrong");
+            }
+            slotBtn.addEventListener("click", () => {
+              if (locked) return;
+              slots[i] = null;
+              playTone(360, 0.06, "sine");
+              renderStage();
+            });
+          } else {
+            slotBtn.textContent = "?";
+            if (i === nextEmptyIdx) {
+              slotBtn.classList.add("next-target");
+            }
+          }
+
+          const orderLbl = document.createElement("div");
+          orderLbl.className = "step-order-num";
+          orderLbl.textContent = `${i + 1}.`;
+
+          col.appendChild(slotBtn);
+          col.appendChild(orderLbl);
+          stairsGridEl.appendChild(col);
+        }
+
+        // Render bottom tiles tray
+        const usedTileIndices = new Set(slots.filter(Boolean).map((s) => s.tileIdx));
+        const maxVal = Math.max(...numbers, 1);
+
+        tilesTrayEl.innerHTML = "";
+        numbers.forEach((num, idx) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "tile-btn";
+          btn.disabled = usedTileIndices.has(idx);
+
+          const numSpan = document.createElement("span");
+          numSpan.className = "tile-num";
+          numSpan.textContent = String(num);
+          btn.appendChild(numSpan);
+
+          const barWrap = document.createElement("div");
+          barWrap.className = "tile-bar-wrap" + (showHelper ? "" : " hidden");
+          const barFill = document.createElement("div");
+          barFill.className = "tile-bar-fill";
+          barFill.style.width = `${Math.max(12, Math.round((num / maxVal) * 100))}%`;
+          barWrap.appendChild(barFill);
+          btn.appendChild(barWrap);
+
+          btn.addEventListener("click", () => handleTileClick(num, idx));
+          tilesTrayEl.appendChild(btn);
+        });
+      }
+
+      function handleTileClick(num, tileIdx) {
+        if (locked) return;
+        const nextIdx = slots.findIndex((s) => s === null);
+        if (nextIdx === -1) return;
+
+        slots[nextIdx] = { num, tileIdx };
+        playTone(440 + nextIdx * 65, 0.07, "triangle");
+        renderStage();
+
+        if (slots.every((s) => s !== null)) {
+          checkSolution();
+        }
+      }
+
+      function checkSolution() {
+        locked = true;
+        const results = slots.map((s, i) => s.num === expected[i]);
+        const allOk = results.every(Boolean);
+
+        renderStage(results);
+
+        if (allOk) {
+          score += hadErrorThisRound ? 1 : 2;
+          streak = hadErrorThisRound ? streak : streak + 1;
+          stepIdx++;
+          rocketBuddyEl.classList.add("launch");
+          burstConfetti(50);
+          playCorrectSound();
+
+          const praise = PRAISE[Math.floor(Math.random() * PRAISE.length)];
+          feedbackEl.className = "feedback-msg ok";
+          feedbackEl.textContent = `${praise} (${expected.join(" → ")})`;
+          renderProgress();
+          speak("Ügyes vagy! Tökéletes sorrend!");
+
+          setTimeout(() => {
+            if (stepIdx >= ROUND_LEN) {
+              burstConfetti(110);
+              playFanfare();
+              modalTitleEl.textContent = "🚀 Küldetés teljesítve!";
+              modalTextEl.textContent = `Mind a ${ROUND_LEN} lépcsősort megoldottad! Pontszám: ${score} ⭐`;
+              modalEl.classList.add("open");
+              speak("Gratulálok! Teljesítetted az űrküldetést!");
+            } else {
+              generateTask();
+            }
+          }, 1100);
+        } else {
+          hadErrorThisRound = true;
+          streak = 0;
+          playWrongSound();
+          feedbackEl.className = "feedback-msg bad";
+          feedbackEl.textContent = "Hoppá! A piros számok nem jó helyen vannak — koppints rájuk és javítsd ki!";
+          renderProgress();
+          speak("Hoppá! Nézd meg újra a piros számokat!");
+
+          setTimeout(() => {
+            // Remove wrong slots automatically so child can re-place them easily
+            slots = slots.map((s, i) => (results[i] ? s : null));
+            locked = false;
+            renderStage();
+          }, 1050);
+        }
+      }
+
+      function resetRound() {
+        stepIdx = 0;
+        score = 0;
+        streak = 0;
+        modalEl.classList.remove("open");
+        generateTask();
+      }
+
+      // --- Controls ---
+      document.querySelectorAll("[data-mode]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll("[data-mode]").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          mode = btn.dataset.mode;
+          playTone(540, 0.06, "triangle");
+          generateTask();
+        });
+      });
+
+      document.querySelectorAll("[data-range]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll("[data-range]").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          range = btn.dataset.range;
+          playTone(620, 0.06, "triangle");
+          generateTask();
+        });
+      });
+
+      helperBtn.addEventListener("click", () => {
+        showHelper = !showHelper;
+        helperBtn.textContent = showHelper ? "📊 Méret: BE" : "📊 Méret: KI";
+        helperBtn.classList.toggle("active-on", showHelper);
+        helperBtn.setAttribute("aria-pressed", String(showHelper));
+        renderStage();
+      });
+
+      ttsBtn.addEventListener("click", () => {
+        ttsOn = !ttsOn;
+        ttsBtn.textContent = ttsOn ? "🗣️ Beszéd: BE" : "🔇 Beszéd: KI";
+        ttsBtn.classList.toggle("active-on", ttsOn);
+        ttsBtn.setAttribute("aria-pressed", String(ttsOn));
+        if (!ttsOn && "speechSynthesis" in window) window.speechSynthesis.cancel();
+      });
+
+      soundBtn.addEventListener("click", () => {
+        soundOn = !soundOn;
+        soundBtn.textContent = soundOn ? "🔊 Hang: BE" : "🔇 Hang: KI";
+        soundBtn.classList.toggle("active-on", soundOn);
+        soundBtn.setAttribute("aria-pressed", String(soundOn));
+        if (soundOn) playTone(660, 0.08, "triangle");
+      });
+
+      clearSlotsBtn.addEventListener("click", () => {
+        if (locked) return;
+        slots = slots.map(() => null);
+        playTone(320, 0.06, "sine");
+        renderStage();
+      });
+
+      resetBtn.addEventListener("click", () => {
+        playTone(440, 0.08, "triangle");
+        resetRound();
+      });
+
+      playAgainBtn.addEventListener("click", resetRound);
+
+      // Init
+      generateTask();
+    })();
+  </script>
+</body>
+</html>
