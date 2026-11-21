@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MatekAppok — A Szupertitkos Matek Főhadiszállás</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#6ec6ff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="MatekAppok" />
   <style>
     :root {
       --sky-top: #6ec6ff;
@@ -544,6 +552,7 @@
         <span>MatekAppok Játékterem • 5 Játék Készen Áll</span>
       </div>
       <div class="top-actions">
+        <button class="mini-btn" id="install-btn" type="button" style="display: none; background: #6bcb77; color: #ffffff;">📲 Telepítés appként</button>
         <button class="mini-btn" id="confetti-btn" type="button">🎉 Ingyen Konfetti!</button>
         <button class="mini-btn secondary" id="sound-btn" type="button" aria-pressed="false">🔇 Hang: KI</button>
       </div>
@@ -1072,6 +1081,36 @@
       } else if (key === "j") {
         nextJoke();
       }
+    });
+
+    // --- PWA Service Worker & Install Prompt ---
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    }
+
+    let deferredPrompt = null;
+    const installBtn = document.getElementById("install-btn");
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (installBtn) installBtn.style.display = "inline-flex";
+    });
+
+    if (installBtn) {
+      installBtn.addEventListener("click", async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === "accepted") {
+          installBtn.style.display = "none";
+        }
+        deferredPrompt = null;
+      });
+    }
+
+    window.addEventListener("appinstalled", () => {
+      if (installBtn) installBtn.style.display = "none";
+      deferredPrompt = null;
     });
   </script>
 </body>
