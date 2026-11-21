@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Számkígyó! — Bontás, Összeadás és Kivonás</title>
+  <style>
+    :root {
+      --ink: #232946;
+      --sky-top: #6ec6ff;
+      --sky-bottom: #d8f4ff;
+      --meadow-1: #9be564;
+      --meadow-2: #58b847;
+      --card: #ffffff;
+      --yellow: #ffd93d;
+      --coral: #ff6b6b;
+      --coral-dark: #d94848;
+      --mint: #4ecdc4;
+      --mint-dark: #2ea89f;
+      --green: #51cf66;
+      --green-dark: #37b24d;
+      --purple: #9b5de5;
+      --purple-dark: #7538c2;
+      --orange: #ff922b;
+      --muted: #5c647d;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: "Comic Sans MS", "Chalkboard SE", "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      overflow-x: hidden;
+    }
+
+    body {
+      min-height: 100dvh;
+      background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 55%, var(--meadow-1) 55%, var(--meadow-2) 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 12px 18px;
+      position: relative;
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 90;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 780px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Top bar */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .top-left, .top-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      appearance: none;
+      text-decoration: none;
+      border: 2.5px solid var(--ink);
+      background: rgba(255, 255, 255, 0.95);
+      color: var(--ink);
+      font-family: inherit;
+      font-weight: 800;
+      font-size: clamp(0.78rem, 2.2vw, 0.9rem);
+      padding: 6px 11px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 3px 0 var(--ink);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: transform 0.1s ease, background 0.15s ease;
+    }
+
+    .pill:hover {
+      background: #fff9db;
+    }
+
+    .pill:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 var(--ink);
+    }
+
+    .pill.active-on {
+      background: var(--mint);
+    }
+
+    /* Settings bar */
+    .settings-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .opt-group {
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.8);
+      border: 2.5px solid var(--ink);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 3px;
+      box-shadow: 0 3px 0 rgba(35, 41, 70, 0.18);
+    }
+
+    .opt-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      font-family: inherit;
+      font-weight: 800;
+      font-size: clamp(0.75rem, 2.1vw, 0.88rem);
+      padding: 5px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    }
+
+    .opt-btn:hover {
+      background: rgba(35, 41, 70, 0.08);
+    }
+
+    .opt-btn.active {
+      background: var(--ink);
+      color: #ffffff;
+    }
+
+    .opt-btn[data-range].active {
+      background: var(--purple);
+      color: #ffffff;
+    }
+
+    /* Main Game Card */
+    .game-card {
+      background: var(--card);
+      border: 4px solid var(--ink);
+      border-radius: 28px;
+      padding: 14px;
+      box-shadow: 0 9px 0 var(--ink), 0 16px 28px rgba(35, 41, 70, 0.18);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Stats row */
+    .stats-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .stat-chips {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .stat-chip {
+      background: #f4f7ff;
+      border: 2.5px solid var(--ink);
+      border-radius: 14px;
+      padding: 4px 10px;
+      font-weight: 900;
+      font-size: clamp(0.82rem, 2.2vw, 0.95rem);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .stat-chip.snake-len {
+      background: #e9f9e5;
+    }
+
+    .stat-chip.streak {
+      background: #fff0e6;
+      color: #c94a06;
+    }
+
+    .stat-chip.best {
+      background: #fff9db;
+    }
+
+    .length-delta {
+      display: inline-block;
+      font-size: 0.85rem;
+      font-weight: 900;
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .length-delta.up {
+      color: var(--green-dark);
+      opacity: 1;
+      transform: translateY(-2px);
+    }
+
+    .length-delta.down {
+      color: var(--coral-dark);
+      opacity: 1;
+      transform: translateY(2px);
+    }
+
+    /* Snake Canvas Stage */
+    .snake-stage {
+      position: relative;
+      width: 100%;
+      height: clamp(165px, 27vw, 225px);
+      border: 3.5px solid var(--ink);
+      border-radius: 22px;
+      overflow: hidden;
+      background: linear-gradient(180deg, #d7f5be 0%, #b7eb93 100%);
+      box-shadow: inset 0 -5px 0 rgba(55, 178, 77, 0.25);
+    }
+
+    #snake-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .stage-badge {
+      position: absolute;
+      top: 8px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      pointer-events: none;
+    }
+
+    /* Question & Feedback Box */
+    .question-stage {
+      background: linear-gradient(180deg, #eef9ff 0%, #f9f6ff 100%);
+      border: 3px solid var(--ink);
+      border-radius: 22px;
+      padding: 12px 14px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .task-type-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #ffffff;
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 2px 11px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--purple-dark);
+    }
+
+    .equation {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: clamp(2rem, 6.5vw, 3rem);
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    .eq-box {
+      min-width: 54px;
+      padding: 4px 12px;
+      border-radius: 16px;
+      background: #ffffff;
+      border: 3px solid var(--ink);
+      box-shadow: 0 4px 0 rgba(35, 41, 70, 0.14);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .eq-box.target-box {
+      background: #fff3bf;
+    }
+
+    .eq-box.unknown {
+      background: #ffd93d;
+      color: var(--ink);
+      min-width: 62px;
+      animation: pulseBox 1.3s ease-in-out infinite;
+    }
+
+    .eq-box.unknown.correct {
+      background: var(--green);
+      color: #ffffff;
+      animation: none;
+    }
+
+    .eq-box.unknown.wrong {
+      background: var(--coral);
+      color: #ffffff;
+      animation: shake 0.35s ease;
+    }
+
+    @keyframes pulseBox {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-7px); }
+      50% { transform: translateX(7px); }
+      75% { transform: translateX(-4px); }
+    }
+
+    .feedback-msg {
+      font-size: clamp(0.88rem, 2.5vw, 1rem);
+      font-weight: 800;
+      min-height: 1.35em;
+      color: var(--ink);
+    }
+
+    .feedback-msg.ok {
+      color: var(--green-dark);
+    }
+
+    .feedback-msg.bad {
+      color: var(--coral-dark);
+    }
+
+    /* Visual dot helper */
+    .helper-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      min-height: 24px;
+      font-size: 1rem;
+    }
+
+    .helper-bar.hidden {
+      display: none;
+    }
+
+    .dot-group {
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 2px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 2px solid rgba(35, 41, 70, 0.2);
+      border-radius: 12px;
+      padding: 3px 7px;
+      max-width: 240px;
+    }
+
+    .helper-op {
+      font-weight: 900;
+      font-size: 1.1rem;
+      color: var(--muted);
+    }
+
+    /* Number Pad */
+    .numpad {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .numpad.wide {
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+
+    @media (max-width: 520px) {
+      .numpad.wide {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+    }
+
+    .num-btn {
+      appearance: none;
+      border: 3px solid var(--ink);
+      background: #ffffff;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: clamp(1.2rem, 4vw, 1.5rem);
+      font-weight: 900;
+      height: clamp(46px, 10vw, 56px);
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 var(--ink);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease;
+    }
+
+    .num-btn:hover {
+      background: #fff9db;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 var(--ink);
+    }
+
+    .num-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 var(--ink);
+    }
+
+    .num-btn.picked-ok {
+      background: var(--green);
+      color: #ffffff;
+    }
+
+    .num-btn.picked-bad {
+      background: var(--coral);
+      color: #ffffff;
+    }
+
+    .num-btn.hint-correct {
+      background: #d3f9d8;
+      border-color: var(--green-dark);
+    }
+
+    .kb-hint {
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    @media (hover: none) {
+      .kb-hint {
+        display: none;
+      }
+    }
+
+    /* Milestone Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(35, 41, 70, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 80;
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 420px;
+      background: #ffffff;
+      border: 4px solid var(--ink);
+      border-radius: 28px;
+      padding: 24px 20px;
+      text-align: center;
+      box-shadow: 0 10px 0 var(--ink);
+      animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.75); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-emoji {
+      font-size: 4rem;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+
+    .modal-title {
+      margin: 0 0 6px;
+      font-size: 1.7rem;
+      font-weight: 900;
+      color: var(--purple-dark);
+    }
+
+    .modal-text {
+      margin: 0 0 16px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .big-btn {
+      appearance: none;
+      border: 3px solid var(--ink);
+      border-radius: 16px;
+      padding: 12px 18px;
+      font-family: inherit;
+      font-size: 1.1rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 5px 0 var(--ink);
+      background: var(--green);
+      color: #ffffff;
+    }
+
+    .big-btn.secondary {
+      background: var(--yellow);
+      color: var(--ink);
+    }
+
+    .big-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 var(--ink);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <main class="app">
+    <div class="top-bar">
+      <div class="top-left">
+        <a class="pill" href="index.html" title="Vissza a főoldalra">🏠 Főoldal</a>
+        <button class="pill" id="reset-btn" type="button" title="Kígyó alaphelyzetbe">🔄 Új kígyó</button>
+      </div>
+      <div class="top-right">
+        <button class="pill active-on" id="helper-btn" type="button" aria-pressed="true">🍓 Pöttyök: BE</button>
+        <button class="pill active-on" id="tts-btn" type="button" aria-pressed="true">🗣️ Beszéd: BE</button>
+        <button class="pill active-on" id="sound-btn" type="button" aria-pressed="true">🔊 Hang: BE</button>
+      </div>
+    </div>
+
+    <div class="settings-bar">
+      <div class="opt-group" role="group" aria-label="Művelet">
+        <button class="opt-btn active" data-mode="mix" type="button">🎲 Vegyes</button>
+        <button class="opt-btn" data-mode="bontas" type="button">🧩 Bontás</button>
+        <button class="opt-btn" data-mode="add" type="button">➕ Összeadás</button>
+        <button class="opt-btn" data-mode="sub" type="button">➖ Kivonás</button>
+      </div>
+
+      <div class="opt-group" role="group" aria-label="Számkör">
+        <button class="opt-btn" data-range="1-5" type="button">1–5</button>
+        <button class="opt-btn active" data-range="1-10" type="button">1–10</button>
+        <button class="opt-btn" data-range="10-20" type="button">10–20</button>
+        <button class="opt-btn" data-range="all" type="button">🌟 Mind</button>
+      </div>
+    </div>
+
+    <section class="game-card">
+      <div class="stats-row">
+        <div class="stat-chips">
+          <div class="stat-chip snake-len">
+            🐍 Hossz: <span id="length-val">3</span>
+            <span class="length-delta" id="length-delta"></span>
+          </div>
+          <div class="stat-chip streak">🔥 Sorozat: <span id="streak-val">0</span></div>
+        </div>
+        <div class="stat-chips">
+          <div class="stat-chip best">🏆 Rekord: <span id="best-val">3</span></div>
+        </div>
+      </div>
+
+      <div class="snake-stage">
+        <canvas id="snake-canvas"></canvas>
+        <div class="stage-badge" id="stage-badge">Helyes válasz: +1 rész • Hibás: −1 rész</div>
+      </div>
+
+      <div class="question-stage">
+        <div class="task-type-pill" id="task-type-pill">🎲 Vegyes feladat</div>
+        <div class="equation" id="equation" aria-live="polite"></div>
+        <div class="helper-bar" id="helper-bar"></div>
+        <div class="feedback-msg" id="feedback-msg">Válaszd ki a helyes számot, hogy nőjön a kígyó!</div>
+      </div>
+
+      <section class="numpad" id="numpad" aria-label="Számgombok"></section>
+      <div class="kb-hint">Tipp géphez: A billentyűzeten is beírhatod a számot (0–20)!</div>
+    </section>
+  </main>
+
+  <div class="modal-overlay" id="milestone-modal">
+    <div class="modal-card">
+      <div class="modal-emoji">🐍🎉</div>
+      <h2 class="modal-title" id="modal-title">Szuper hosszú kígyó!</h2>
+      <p class="modal-text" id="modal-text">A kígyód elérte a 10-es hosszt! Folytatod a növesztést, vagy kezdesz egy újat?</p>
+      <div class="modal-actions">
+        <button class="big-btn" id="continue-btn" type="button">🐍 Folytatom tovább!</button>
+        <button class="big-btn secondary" id="new-snake-btn" type="button">🔄 Új kígyó indítása</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const START_LEN = 3;
+      const MIN_LEN = 2;
+      const MILESTONE_STEP = 10;
+      const SEGMENT_COLORS = ["#6bcb77", "#4ecdc4", "#ffd93d", "#ff922b", "#9b5de5", "#ff6b6b"];
+      const TREATS = ["🍎", "🍓", "🍌", "🍇", "🍉", "🍒", "🥕"];
+      const PRAISE = [
+        "Nyamm! Nőtt a kígyó! 🐍",
+        "Szuper! +1 szép színes rész! ✨",
+        "Telitalálat! Ügyes vagy! 🎉",
+        "Zseniális matek! 🧠",
+        "Hűha, milyen hosszú lesz! 🌟",
+        "Pacsit a kígyónak! 🙌"
+      ];
+
+      // State
+      let mode = "mix";      // "mix" | "bontas" | "add" | "sub"
+      let range = "1-10";    // "1-5" | "1-10" | "10-20" | "all"
+      let showHelper = true;
+      let soundOn = true;
+      let ttsOn = true;
+
+      let snakeLen = START_LEN;
+      let bestLen = START_LEN;
+      let streak = 0;
+      let nextMilestone = MILESTONE_STEP;
+      let locked = false;
+      let currentQ = null;
+      let lastQuestionKey = "";
+      let keyBuffer = "";
+      let keyTimer = null;
+
+      try {
+        const savedBest = parseInt(localStorage.getItem("szamkigyo_best") || "0", 10);
+        if (savedBest >= START_LEN) bestLen = savedBest;
+      } catch (_) {}
+
+      // DOM
+      const lengthValEl = document.getElementById("length-val");
+      const lengthDeltaEl = document.getElementById("length-delta");
+      const streakValEl = document.getElementById("streak-val");
+      const bestValEl = document.getElementById("best-val");
+      const taskTypePillEl = document.getElementById("task-type-pill");
+      const equationEl = document.getElementById("equation");
+      const helperBarEl = document.getElementById("helper-bar");
+      const feedbackEl = document.getElementById("feedback-msg");
+      const numpadEl = document.getElementById("numpad");
+      const helperBtn = document.getElementById("helper-btn");
+      const ttsBtn = document.getElementById("tts-btn");
+      const soundBtn = document.getElementById("sound-btn");
+      const resetBtn = document.getElementById("reset-btn");
+      const modalEl = document.getElementById("milestone-modal");
+      const modalTitleEl = document.getElementById("modal-title");
+      const modalTextEl = document.getElementById("modal-text");
+      const continueBtn = document.getElementById("continue-btn");
+      const newSnakeBtn = document.getElementById("new-snake-btn");
+
+      // --- Audio & TTS ---
+      let audioCtx = null;
+      function getAudio() {
+        if (!soundOn) return null;
+        if (!audioCtx) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (Ctx) audioCtx = new Ctx();
+        }
+        if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+        return audioCtx;
+      }
+
+      function playTone(freq, dur = 0.1, type = "sine", delay = 0, vol = 0.12) {
+        const ctx = getAudio();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+        gain.gain.setValueAtTime(vol, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + dur);
+      }
+
+      function playCorrectSound() {
+        playTone(523.25, 0.1, "triangle", 0);
+        playTone(659.25, 0.1, "triangle", 0.08);
+        playTone(783.99, 0.18, "triangle", 0.16);
+      }
+
+      function playWrongSound() {
+        playTone(260, 0.14, "sine", 0, 0.1);
+        playTone(185, 0.22, "sine", 0.1, 0.1);
+      }
+
+      function playFanfare() {
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+          playTone(f, 0.2, "triangle", i * 0.09, 0.14);
+        });
+      }
+
+      function speak(text) {
+        if (!soundOn || !ttsOn || !text) return;
+        try {
+          if (!("speechSynthesis" in window)) return;
+          const clean = String(text)
+            .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, "")
+            .replace(/\s+/g, " ")
+            .trim();
+          if (!clean) return;
+          window.speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(clean);
+          utter.lang = "hu-HU";
+          const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+          const match = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("hu"));
+          if (match) utter.voice = match;
+          utter.pitch = 1.1;
+          utter.rate = 1.02;
+          window.speechSynthesis.speak(utter);
+        } catch (_) {}
+      }
+
+      // --- Confetti ---
+      const confettiCanvas = document.getElementById("confetti-canvas");
+      const cCtx = confettiCanvas.getContext("2d");
+      let confettiPieces = [];
+      let confettiAnimId = null;
+
+      function resizeConfetti() {
+        confettiCanvas.width = window.innerWidth;
+        confettiCanvas.height = window.innerHeight;
+      }
+      resizeConfetti();
+      window.addEventListener("resize", resizeConfetti);
+
+      function burstConfetti(count = 55) {
+        const colors = ["#ff6b6b", "#ffd93d", "#4ecdc4", "#9b5de5", "#6bcb77", "#ffffff"];
+        for (let i = 0; i < count; i++) {
+          confettiPieces.push({
+            x: Math.random() * confettiCanvas.width,
+            y: -10 - Math.random() * 50,
+            w: 7 + Math.random() * 7,
+            h: 5 + Math.random() * 6,
+            vx: (Math.random() - 0.5) * 6,
+            vy: 3 + Math.random() * 4.5,
+            rot: Math.random() * Math.PI * 2,
+            vrot: (Math.random() - 0.5) * 0.2,
+            color: colors[Math.floor(Math.random() * colors.length)]
+          });
+        }
+        if (!confettiAnimId) tickConfetti();
+      }
+
+      function tickConfetti() {
+        cCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        confettiPieces = confettiPieces.filter((p) => p.y < confettiCanvas.height + 20);
+        for (const p of confettiPieces) {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.08;
+          p.rot += p.vrot;
+          cCtx.save();
+          cCtx.translate(p.x, p.y);
+          cCtx.rotate(p.rot);
+          cCtx.fillStyle = p.color;
+          cCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          cCtx.restore();
+        }
+        if (confettiPieces.length > 0) {
+          confettiAnimId = requestAnimationFrame(tickConfetti);
+        } else {
+          confettiAnimId = null;
+        }
+      }
+
+      // --- Snake Canvas Animation ---
+      const snakeCanvas = document.getElementById("snake-canvas");
+      const sCtx = snakeCanvas.getContext("2d");
+      let snakeMood = "happy"; // "happy" | "chomp" | "dizzy"
+      let moodTimer = 0;
+      let animTime = 0;
+      let pathPoints = [];
+      let particles = [];
+      let currentTreat = "🍎";
+      let flowers = [];
+
+      function resizeSnakeCanvas() {
+        const rect = snakeCanvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        snakeCanvas.width = Math.max(1, Math.floor(rect.width * dpr));
+        snakeCanvas.height = Math.max(1, Math.floor(rect.height * dpr));
+        sCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        flowers = [];
+        const w = rect.width;
+        const h = rect.height;
+        const flowerColors = ["#ffffff", "#ffd93d", "#ff8fab", "#a5d8ff"];
+        for (let i = 0; i < 14; i++) {
+          flowers.push({
+            x: 18 + Math.random() * Math.max(40, w - 36),
+            y: 22 + Math.random() * Math.max(40, h - 36),
+            r: 3 + Math.random() * 3,
+            color: flowerColors[i % flowerColors.length]
+          });
+        }
+      }
+      resizeSnakeCanvas();
+      window.addEventListener("resize", resizeSnakeCanvas);
+
+      function spawnStageParticles(x, y, color, count = 12) {
+        for (let i = 0; i < count; i++) {
+          const ang = (Math.PI * 2 * i) / count + Math.random() * 0.3;
+          const spd = 1.5 + Math.random() * 3;
+          particles.push({
+            x,
+            y,
+            vx: Math.cos(ang) * spd,
+            vy: Math.sin(ang) * spd,
+            life: 1,
+            color,
+            r: 3 + Math.random() * 3
+          });
+        }
+      }
+
+      function getHeadPos(t, w, h) {
+        const cx = w * 0.5;
+        const cy = h * 0.54;
+        const rx = Math.max(60, w * 0.36);
+        const ry = Math.max(28, h * 0.27);
+        const x = cx + Math.sin(t) * rx;
+        const y = cy + Math.sin(t * 2) * ry * 0.85;
+        return { x, y };
+      }
+
+      function drawSnakeStage() {
+        const w = snakeCanvas.clientWidth;
+        const h = snakeCanvas.clientHeight;
+        if (w <= 0 || h <= 0) {
+          requestAnimationFrame(drawSnakeStage);
+          return;
+        }
+
+        sCtx.clearRect(0, 0, w, h);
+
+        // Little meadow flowers
+        for (const f of flowers) {
+          sCtx.fillStyle = f.color;
+          sCtx.beginPath();
+          sCtx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+          sCtx.fill();
+        }
+
+        // Advance snake along smooth figure-8 path
+        const speed = snakeMood === "dizzy" ? 0.008 : 0.026;
+        animTime += speed;
+        const head = getHeadPos(animTime, w, h);
+        const prevHead = pathPoints[0] || head;
+        const dx = head.x - prevHead.x;
+        const dy = head.y - prevHead.y;
+        const angle = Math.atan2(dy, dx);
+
+        // Keep path history dense enough for any snake length
+        pathPoints.unshift({ x: head.x, y: head.y, angle });
+        const maxHistory = Math.max(180, snakeLen * 18);
+        if (pathPoints.length > maxHistory) pathPoints.length = maxHistory;
+
+        // Pick segment positions spaced along path
+        const segSpacing = Math.max(12, Math.min(20, (w * 0.45) / Math.max(6, snakeLen * 0.55)));
+        const segPositions = [];
+        let accDist = 0;
+        let lastPt = pathPoints[0];
+        segPositions.push(lastPt);
+
+        for (let i = 1; i < pathPoints.length && segPositions.length < snakeLen; i++) {
+          const pt = pathPoints[i];
+          const stepDist = Math.hypot(pt.x - lastPt.x, pt.y - lastPt.y);
+          accDist += stepDist;
+          if (accDist >= segSpacing) {
+            segPositions.push(pt);
+            accDist = 0;
+          }
+          lastPt = pt;
+        }
+
+        // If just started or grew, pad tail gently
+        while (segPositions.length < snakeLen) {
+          const tail = segPositions[segPositions.length - 1];
+          segPositions.push({ x: tail.x - Math.cos(tail.angle) * 6, y: tail.y - Math.sin(tail.angle) * 6, angle: tail.angle });
+        }
+
+        const baseRadius = Math.max(11, Math.min(18, 20 - snakeLen * 0.16));
+
+        // Draw body segments from tail to neck
+        for (let i = segPositions.length - 1; i >= 1; i--) {
+          const p = segPositions[i];
+          const taper = i === segPositions.length - 1 ? 0.72 : 1 - (i / (segPositions.length + 5)) * 0.18;
+          const r = baseRadius * taper;
+          const color = SEGMENT_COLORS[(i - 1) % SEGMENT_COLORS.length];
+
+          sCtx.save();
+          sCtx.translate(p.x, p.y);
+
+          // Shadow
+          sCtx.fillStyle = "rgba(35, 41, 70, 0.14)";
+          sCtx.beginPath();
+          sCtx.ellipse(0, r * 0.75, r * 0.85, r * 0.35, 0, 0, Math.PI * 2);
+          sCtx.fill();
+
+          // Segment circle
+          sCtx.fillStyle = color;
+          sCtx.strokeStyle = "#232946";
+          sCtx.lineWidth = 3;
+          sCtx.beginPath();
+          sCtx.arc(0, 0, r, 0, Math.PI * 2);
+          sCtx.fill();
+          sCtx.stroke();
+
+          // Cute highlight spot
+          sCtx.fillStyle = "rgba(255, 255, 255, 0.4)";
+          sCtx.beginPath();
+          sCtx.arc(-r * 0.3, -r * 0.3, r * 0.25, 0, Math.PI * 2);
+          sCtx.fill();
+
+          sCtx.restore();
+        }
+
+        // Draw Head
+        const hPos = segPositions[0];
+        const headR = baseRadius * 1.18;
+        sCtx.save();
+        sCtx.translate(hPos.x, hPos.y);
+        if (snakeMood === "dizzy") {
+          sCtx.translate(Math.sin(animTime * 40) * 3, 0);
+        }
+
+        // Forked tongue
+        if (Math.sin(animTime * 8) > 0.2 || snakeMood === "chomp") {
+          sCtx.save();
+          sCtx.rotate(hPos.angle);
+          sCtx.strokeStyle = "#ff4d6d";
+          sCtx.lineWidth = 2.5;
+          sCtx.lineCap = "round";
+          sCtx.beginPath();
+          sCtx.moveTo(headR - 2, 0);
+          sCtx.lineTo(headR + 10, 0);
+          sCtx.lineTo(headR + 14, -4);
+          sCtx.moveTo(headR + 10, 0);
+          sCtx.lineTo(headR + 14, 4);
+          sCtx.stroke();
+          sCtx.restore();
+        }
+
+        // Head shape
+        sCtx.fillStyle = "#51cf66";
+        sCtx.strokeStyle = "#232946";
+        sCtx.lineWidth = 3.5;
+        sCtx.beginPath();
+        sCtx.arc(0, 0, headR, 0, Math.PI * 2);
+        sCtx.fill();
+        sCtx.stroke();
+
+        // Cheeks
+        sCtx.fillStyle = "rgba(255, 107, 107, 0.55)";
+        sCtx.beginPath();
+        sCtx.arc(-headR * 0.48, headR * 0.28, headR * 0.2, 0, Math.PI * 2);
+        sCtx.arc(headR * 0.48, headR * 0.28, headR * 0.2, 0, Math.PI * 2);
+        sCtx.fill();
+
+        // Eyes
+        const eyeY = -headR * 0.22;
+        const eyeX = headR * 0.42;
+        const eyeR = headR * 0.34;
+        [-eyeX, eyeX].forEach((ex) => {
+          sCtx.fillStyle = "#ffffff";
+          sCtx.strokeStyle = "#232946";
+          sCtx.lineWidth = 2.5;
+          sCtx.beginPath();
+          sCtx.arc(ex, eyeY, eyeR, 0, Math.PI * 2);
+          sCtx.fill();
+          sCtx.stroke();
+
+          if (snakeMood === "dizzy") {
+            sCtx.strokeStyle = "#232946";
+            sCtx.lineWidth = 2;
+            sCtx.beginPath();
+            sCtx.moveTo(ex - 3, eyeY - 3);
+            sCtx.lineTo(ex + 3, eyeY + 3);
+            sCtx.moveTo(ex + 3, eyeY - 3);
+            sCtx.lineTo(ex - 3, eyeY + 3);
+            sCtx.stroke();
+          } else {
+            sCtx.fillStyle = "#232946";
+            sCtx.beginPath();
+            sCtx.arc(ex + Math.cos(hPos.angle) * 2, eyeY + Math.sin(hPos.angle) * 2, eyeR * 0.46, 0, Math.PI * 2);
+            sCtx.fill();
+          }
+        });
+
+        // Smile or O-mouth
+        sCtx.strokeStyle = "#232946";
+        sCtx.lineWidth = 2.5;
+        sCtx.lineCap = "round";
+        sCtx.beginPath();
+        if (snakeMood === "dizzy") {
+          sCtx.arc(0, headR * 0.34, headR * 0.22, 0, Math.PI * 2);
+        } else {
+          sCtx.arc(0, headR * 0.16, headR * 0.38, 0.15 * Math.PI, 0.85 * Math.PI);
+        }
+        sCtx.stroke();
+
+        sCtx.restore();
+
+        // Draw floating treat ahead of snake
+        const ahead = getHeadPos(animTime + 0.55, w, h);
+        sCtx.font = "22px sans-serif";
+        sCtx.textAlign = "center";
+        sCtx.textBaseline = "middle";
+        sCtx.fillText(currentTreat, ahead.x, ahead.y + Math.sin(animTime * 5) * 4);
+
+        // Stage particles
+        particles = particles.filter((p) => p.life > 0.05);
+        for (const p of particles) {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life *= 0.92;
+          sCtx.globalAlpha = p.life;
+          sCtx.fillStyle = p.color;
+          sCtx.beginPath();
+          sCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          sCtx.fill();
+        }
+        sCtx.globalAlpha = 1;
+
+        if (moodTimer > 0) {
+          moodTimer--;
+          if (moodTimer === 0) snakeMood = "happy";
+        }
+
+        requestAnimationFrame(drawSnakeStage);
+      }
+      requestAnimationFrame(drawSnakeStage);
+
+      // --- Question Generation ---
+      function randInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function getRangeBounds() {
+        if (range === "1-5") return { min: 1, max: 5 };
+        if (range === "1-10") return { min: 1, max: 10 };
+        if (range === "10-20") return { min: 10, max: 20 };
+        return { min: 1, max: 20 };
+      }
+
+      function generateQuestion() {
+        const types = mode === "mix" ? ["bontas", "add", "sub"] : [mode];
+        const bounds = getRangeBounds();
+        let q = null;
+
+        for (let attempt = 0; attempt < 25; attempt++) {
+          const type = types[Math.floor(Math.random() * types.length)];
+
+          if (type === "add") {
+            const targetMin = Math.max(2, bounds.min);
+            const sum = randInt(targetMin, bounds.max);
+            const a = randInt(1, sum - 1);
+            const b = sum - a;
+            q = { type: "add", a, b, ans: sum, key: `add:${a}+${b}` };
+          } else if (type === "sub") {
+            const a = randInt(Math.max(2, bounds.min), bounds.max);
+            const b = randInt(1, a);
+            const ans = a - b;
+            q = { type: "sub", a, b, ans, key: `sub:${a}-${b}` };
+          } else {
+            // Bontás: target = left + right, one side hidden
+            const target = randInt(Math.max(2, bounds.min), bounds.max);
+            const left = randInt(0, target);
+            const right = target - left;
+            const hideLeft = Math.random() < 0.5;
+            const ans = hideLeft ? left : right;
+            q = {
+              type: "bontas",
+              target,
+              left,
+              right,
+              hideLeft,
+              ans,
+              key: `bontas:${target}:${hideLeft ? "?" : left}+${hideLeft ? right : "?"}`
+            };
+          }
+
+          if (q.key !== lastQuestionKey) break;
+        }
+
+        lastQuestionKey = q.key;
+        return q;
+      }
+
+      function renderDots(count, emoji = "🍓") {
+        const wrap = document.createElement("span");
+        wrap.className = "dot-group";
+        if (count === 0) {
+          wrap.textContent = "0";
+          return wrap;
+        }
+        for (let i = 0; i < count; i++) {
+          const s = document.createElement("span");
+          s.textContent = emoji;
+          wrap.appendChild(s);
+        }
+        return wrap;
+      }
+
+      function renderHelper() {
+        helperBarEl.innerHTML = "";
+        if (!showHelper || !currentQ) {
+          helperBarEl.classList.add("hidden");
+          return;
+        }
+        helperBarEl.classList.remove("hidden");
+
+        if (currentQ.type === "add") {
+          helperBarEl.appendChild(renderDots(currentQ.a, "🍓"));
+          const op = document.createElement("span");
+          op.className = "helper-op";
+          op.textContent = "+";
+          helperBarEl.appendChild(op);
+          helperBarEl.appendChild(renderDots(currentQ.b, "🫐"));
+        } else if (currentQ.type === "sub") {
+          helperBarEl.appendChild(renderDots(currentQ.a, "🍎"));
+          const op = document.createElement("span");
+          op.className = "helper-op";
+          op.textContent = `− ${currentQ.b}`;
+          helperBarEl.appendChild(op);
+        } else {
+          // Bontás helper: show total apples and known part
+          const known = currentQ.hideLeft ? currentQ.right : currentQ.left;
+          helperBarEl.appendChild(renderDots(currentQ.target, "🍏"));
+          const op = document.createElement("span");
+          op.className = "helper-op";
+          op.textContent = `→ ${known} + ?`;
+          helperBarEl.appendChild(op);
+        }
+      }
+
+      function renderQuestion() {
+        currentQ = generateQuestion();
+        currentTreat = TREATS[Math.floor(Math.random() * TREATS.length)];
+        equationEl.innerHTML = "";
+
+        if (currentQ.type === "bontas") {
+          taskTypePillEl.textContent = "🧩 Számbontás";
+          equationEl.innerHTML = `
+            <span class="eq-box target-box">${currentQ.target}</span>
+            <span>=</span>
+            <span class="eq-box ${currentQ.hideLeft ? "unknown" : ""}" id="${currentQ.hideLeft ? "unknown-box" : ""}">${currentQ.hideLeft ? "?" : currentQ.left}</span>
+            <span>+</span>
+            <span class="eq-box ${!currentQ.hideLeft ? "unknown" : ""}" id="${!currentQ.hideLeft ? "unknown-box" : ""}">${!currentQ.hideLeft ? "?" : currentQ.right}</span>
+          `;
+        } else if (currentQ.type === "add") {
+          taskTypePillEl.textContent = "➕ Összeadás";
+          equationEl.innerHTML = `
+            <span class="eq-box">${currentQ.a}</span>
+            <span>+</span>
+            <span class="eq-box">${currentQ.b}</span>
+            <span>=</span>
+            <span class="eq-box unknown" id="unknown-box">?</span>
+          `;
+        } else {
+          taskTypePillEl.textContent = "➖ Kivonás";
+          equationEl.innerHTML = `
+            <span class="eq-box">${currentQ.a}</span>
+            <span>&minus;</span>
+            <span class="eq-box">${currentQ.b}</span>
+            <span>=</span>
+            <span class="eq-box unknown" id="unknown-box">?</span>
+          `;
+        }
+
+        renderHelper();
+        feedbackEl.className = "feedback-msg";
+        feedbackEl.textContent = "Válaszd ki a helyes számot, hogy nőjön a kígyó!";
+        renderNumpad();
+      }
+
+      function getMaxNumpad() {
+        return range === "1-5" || range === "1-10" ? 10 : 20;
+      }
+
+      function renderNumpad() {
+        const maxNum = getMaxNumpad();
+        numpadEl.innerHTML = "";
+        numpadEl.classList.toggle("wide", maxNum > 10);
+
+        for (let n = 0; n <= maxNum; n++) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "num-btn";
+          btn.textContent = String(n);
+          btn.dataset.num = String(n);
+          btn.addEventListener("click", () => handleAnswer(n, btn));
+          numpadEl.appendChild(btn);
+        }
+      }
+
+      function updateStatsUI(delta = 0) {
+        lengthValEl.textContent = String(snakeLen);
+        streakValEl.textContent = String(streak);
+        bestValEl.textContent = String(bestLen);
+
+        lengthDeltaEl.className = "length-delta";
+        if (delta > 0) {
+          lengthDeltaEl.textContent = "+1";
+          lengthDeltaEl.classList.add("up");
+        } else if (delta < 0) {
+          lengthDeltaEl.textContent = "−1";
+          lengthDeltaEl.classList.add("down");
+        } else {
+          lengthDeltaEl.textContent = "";
+        }
+      }
+
+      function formatFullEquation(q) {
+        if (q.type === "bontas") return `${q.target} = ${q.left} + ${q.right}`;
+        if (q.type === "add") return `${q.a} + ${q.b} = ${q.ans}`;
+        return `${q.a} − ${q.b} = ${q.ans}`;
+      }
+
+      function handleAnswer(val, btnEl) {
+        if (locked || !currentQ) return;
+        locked = true;
+
+        const unknownBox = document.getElementById("unknown-box");
+        const isCorrect = val === currentQ.ans;
+        const w = snakeCanvas.clientWidth;
+        const h = snakeCanvas.clientHeight;
+        const head = pathPoints[0] || { x: w / 2, y: h / 2 };
+
+        if (isCorrect) {
+          snakeLen++;
+          streak++;
+          if (snakeLen > bestLen) {
+            bestLen = snakeLen;
+            try { localStorage.setItem("szamkigyo_best", String(bestLen)); } catch (_) {}
+          }
+
+          if (unknownBox) {
+            unknownBox.textContent = String(val);
+            unknownBox.classList.add("correct");
+          }
+          if (btnEl) btnEl.classList.add("picked-ok");
+
+          snakeMood = "chomp";
+          moodTimer = 35;
+          spawnStageParticles(head.x, head.y, "#ffd93d", 16);
+          burstConfetti(36);
+          playCorrectSound();
+
+          const praise = PRAISE[Math.floor(Math.random() * PRAISE.length)];
+          feedbackEl.className = "feedback-msg ok";
+          feedbackEl.textContent = `${praise} (${formatFullEquation(currentQ)})`;
+          updateStatsUI(1);
+          speak("Ügyes vagy! Nőtt a kígyó!");
+
+          if (snakeLen >= nextMilestone) {
+            nextMilestone += MILESTONE_STEP;
+            setTimeout(() => {
+              burstConfetti(100);
+              playFanfare();
+              modalTitleEl.textContent = `🎉 ${snakeLen} részes kígyó!`;
+              modalTextEl.textContent = `Fantasztikus! A kígyód már ${snakeLen} részből áll! Folytatod a növesztést, vagy kezdesz egy újat?`;
+              modalEl.classList.add("open");
+              speak(`Gratulálok! A kígyód már ${snakeLen} részes!`);
+            }, 650);
+          } else {
+            setTimeout(() => {
+              locked = false;
+              renderQuestion();
+            }, 900);
+          }
+        } else {
+          const prevLen = snakeLen;
+          snakeLen = Math.max(MIN_LEN, snakeLen - 1);
+          const shrank = snakeLen < prevLen;
+          streak = 0;
+
+          if (unknownBox) {
+            unknownBox.textContent = String(currentQ.ans);
+            unknownBox.classList.add("wrong");
+          }
+          if (btnEl) btnEl.classList.add("picked-bad");
+
+          const correctBtn = numpadEl.querySelector(`[data-num="${currentQ.ans}"]`);
+          if (correctBtn) correctBtn.classList.add("hint-correct");
+
+          snakeMood = "dizzy";
+          moodTimer = 45;
+          const tail = pathPoints[Math.min(pathPoints.length - 1, snakeLen * 10)] || head;
+          spawnStageParticles(tail.x, tail.y, "#ff6b6b", 12);
+          playWrongSound();
+
+          feedbackEl.className = "feedback-msg bad";
+          feedbackEl.textContent = shrank
+            ? `Hoppá! ${formatFullEquation(currentQ)} — A kígyó 1 résszel rövidebb lett!`
+            : `Hoppá! ${formatFullEquation(currentQ)} — Ennél rövidebb már nem lehet!`;
+          updateStatsUI(shrank ? -1 : 0);
+          speak(`Hoppá! A helyes válasz ${currentQ.ans}.`);
+
+          setTimeout(() => {
+            locked = false;
+            renderQuestion();
+          }, 1450);
+        }
+      }
+
+      function resetSnake() {
+        snakeLen = START_LEN;
+        streak = 0;
+        nextMilestone = MILESTONE_STEP;
+        locked = false;
+        modalEl.classList.remove("open");
+        updateStatsUI(0);
+        renderQuestion();
+      }
+
+      // --- Controls & Settings ---
+      document.querySelectorAll("[data-mode]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll("[data-mode]").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          mode = btn.dataset.mode;
+          playTone(540, 0.06, "triangle");
+          locked = false;
+          renderQuestion();
+        });
+      });
+
+      document.querySelectorAll("[data-range]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll("[data-range]").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          range = btn.dataset.range;
+          playTone(620, 0.06, "triangle");
+          locked = false;
+          renderQuestion();
+        });
+      });
+
+      helperBtn.addEventListener("click", () => {
+        showHelper = !showHelper;
+        helperBtn.textContent = showHelper ? "🍓 Pöttyök: BE" : "🍓 Pöttyök: KI";
+        helperBtn.classList.toggle("active-on", showHelper);
+        helperBtn.setAttribute("aria-pressed", String(showHelper));
+        renderHelper();
+      });
+
+      ttsBtn.addEventListener("click", () => {
+        ttsOn = !ttsOn;
+        ttsBtn.textContent = ttsOn ? "🗣️ Beszéd: BE" : "🔇 Beszéd: KI";
+        ttsBtn.classList.toggle("active-on", ttsOn);
+        ttsBtn.setAttribute("aria-pressed", String(ttsOn));
+        if (!ttsOn && "speechSynthesis" in window) window.speechSynthesis.cancel();
+      });
+
+      soundBtn.addEventListener("click", () => {
+        soundOn = !soundOn;
+        soundBtn.textContent = soundOn ? "🔊 Hang: BE" : "🔇 Hang: KI";
+        soundBtn.classList.toggle("active-on", soundOn);
+        soundBtn.setAttribute("aria-pressed", String(soundOn));
+        if (soundOn) playTone(660, 0.08, "triangle");
+      });
+
+      resetBtn.addEventListener("click", () => {
+        playTone(440, 0.08, "triangle");
+        resetSnake();
+      });
+
+      continueBtn.addEventListener("click", () => {
+        modalEl.classList.remove("open");
+        locked = false;
+        renderQuestion();
+      });
+
+      newSnakeBtn.addEventListener("click", () => {
+        resetSnake();
+      });
+
+      // --- Keyboard support (0-20) ---
+      window.addEventListener("keydown", (e) => {
+        if (modalEl.classList.contains("open")) {
+          if (e.key === "Enter") continueBtn.click();
+          return;
+        }
+        if (locked) return;
+        if (e.key >= "0" && e.key <= "9") {
+          const maxNum = getMaxNumpad();
+          keyBuffer += e.key;
+          clearTimeout(keyTimer);
+          const num = parseInt(keyBuffer, 10);
+
+          if (maxNum <= 10) {
+            if (keyBuffer === "1" && maxNum === 10) {
+              keyTimer = setTimeout(() => {
+                const val = parseInt(keyBuffer, 10);
+                keyBuffer = "";
+                const btn = numpadEl.querySelector(`[data-num="${val}"]`);
+                if (val <= maxNum) handleAnswer(val, btn);
+              }, 380);
+            } else {
+              keyBuffer = "";
+              if (num <= maxNum) {
+                const btn = numpadEl.querySelector(`[data-num="${num}"]`);
+                handleAnswer(num, btn);
+              }
+            }
+          } else {
+            if ((keyBuffer === "1" || keyBuffer === "2") && keyBuffer.length === 1) {
+              keyTimer = setTimeout(() => {
+                const val = parseInt(keyBuffer, 10);
+                keyBuffer = "";
+                const btn = numpadEl.querySelector(`[data-num="${val}"]`);
+                if (val <= maxNum) handleAnswer(val, btn);
+              }, 420);
+            } else {
+              keyBuffer = "";
+              if (num <= maxNum) {
+                const btn = numpadEl.querySelector(`[data-num="${num}"]`);
+                handleAnswer(num, btn);
+              }
+            }
+          }
+        } else if (e.key === "Enter" && keyBuffer) {
+          clearTimeout(keyTimer);
+          const val = parseInt(keyBuffer, 10);
+          keyBuffer = "";
+          if (val <= getMaxNumpad()) {
+            const btn = numpadEl.querySelector(`[data-num="${val}"]`);
+            handleAnswer(val, btn);
+          }
+        }
+      });
+
+      // Init
+      updateStatsUI(0);
+      renderQuestion();
+    })();
+  </script>
+</body>
+</html>
