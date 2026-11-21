@@ -639,6 +639,28 @@
       box-shadow: 0 2px 0 var(--ink);
     }
 
+    .stairs-grid.dense .step-slot {
+      font-size: clamp(1.1rem, 3vw, 1.55rem);
+      border-radius: 12px 12px 8px 8px;
+    }
+
+    .tiles-tray.dense .tile-num {
+      font-size: clamp(1.15rem, 3.2vw, 1.55rem);
+    }
+
+    @media (max-width: 600px) {
+      .stairs-grid,
+      .tiles-tray {
+        grid-template-columns: repeat(var(--cols-mobile, var(--cols, 5)), minmax(0, 1fr));
+      }
+      .stairs-grid.dense {
+        row-gap: 10px;
+      }
+      .stairs-grid.dense .step-slot {
+        height: min(var(--step-h, 70px), 78px);
+      }
+    }
+
     @media (max-width: 520px) {
       body {
         padding: 8px 8px 14px;
@@ -792,6 +814,7 @@
       // State
       let mode = "mix";      // "mix" | "asc" | "desc"
       let range = "1-10";    // "1-5" | "1-10" | "10-20" | "all"
+      let seqLength = 5;     // 5..10 when range is 10-20 or all
       let showHelper = true;
       let soundOn = true;
       let ttsOn = true;
@@ -809,6 +832,7 @@
       let lastKey = "";
 
       // DOM
+      const lengthGroupEl = document.getElementById("length-group");
       const progressTrackEl = document.getElementById("progress-track");
       const scoreValEl = document.getElementById("score-val");
       const streakValEl = document.getElementById("streak-val");
@@ -949,11 +973,19 @@
       }
 
       // --- Helpers ---
+      function hasWideRange() {
+        return range === "10-20" || range === "all";
+      }
+
+      function updateLengthSelectorVisibility() {
+        lengthGroupEl.classList.toggle("hidden", !hasWideRange());
+      }
+
       function getRangeBounds() {
         if (range === "1-5") return { min: 1, max: 5, count: 4 };
         if (range === "1-10") return { min: 1, max: 10, count: 5 };
-        if (range === "10-20") return { min: 10, max: 20, count: 5 };
-        return { min: 1, max: 20, count: 5 };
+        if (range === "10-20") return { min: 10, max: 20, count: seqLength };
+        return { min: 1, max: 20, count: seqLength };
       }
 
       function shuffle(arr) {
@@ -1203,7 +1235,18 @@
           document.querySelectorAll("[data-range]").forEach((b) => b.classList.remove("active"));
           btn.classList.add("active");
           range = btn.dataset.range;
+          updateLengthSelectorVisibility();
           playTone(620, 0.06, "triangle");
+          generateTask();
+        });
+      });
+
+      document.querySelectorAll("[data-len]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll("[data-len]").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          seqLength = parseInt(btn.dataset.len, 10) || 5;
+          playTone(680, 0.06, "triangle");
           generateTask();
         });
       });
@@ -1247,6 +1290,7 @@
       playAgainBtn.addEventListener("click", resetRound);
 
       // Init
+      updateLengthSelectorVisibility();
       generateTask();
     })();
   </script>
