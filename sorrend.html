@@ -865,6 +865,7 @@
       let expected = [];      // sorted expected numbers
       let slots = [];         // array of { num, tileIdx } | null
       let lastKey = "";
+      let roundTimer = null;
 
       // DOM
       const lengthGroupEl = document.getElementById("length-group");
@@ -1046,6 +1047,7 @@
       }
 
       function generateTask() {
+        clearTimeout(roundTimer);
         const bounds = getRangeBounds();
         const pool = [];
         for (let n = bounds.min; n <= bounds.max; n++) pool.push(n);
@@ -1223,7 +1225,8 @@
           renderProgress();
           speak("Ügyes vagy! Tökéletes sorrend!");
 
-          setTimeout(() => {
+          clearTimeout(roundTimer);
+          roundTimer = setTimeout(() => {
             if (stepIdx >= ROUND_LEN) {
               burstConfetti(110);
               playFanfare();
@@ -1244,7 +1247,8 @@
           renderProgress();
           speak("Hoppá! Nézd meg újra a piros számokat!");
 
-          setTimeout(() => {
+          clearTimeout(roundTimer);
+          roundTimer = setTimeout(() => {
             // Remove wrong slots automatically so child can re-place them easily
             slots = slots.map((s, i) => (results[i] ? s : null));
             locked = false;

@@ -736,6 +736,7 @@
       let lastQuestionKey = "";
       let keyBuffer = "";
       let keyTimer = null;
+      let stepTimer = null;
 
       try {
         const savedBest = parseInt(localStorage.getItem("szamkigyo_best") || "0", 10);
@@ -1255,6 +1256,7 @@
       }
 
       function renderQuestion() {
+        clearTimeout(stepTimer);
         currentQ = generateQuestion();
         currentTreat = TREATS[Math.floor(Math.random() * TREATS.length)];
         equationEl.innerHTML = "";
@@ -1373,9 +1375,10 @@
           updateStatsUI(1);
           speak("Ügyes vagy! Nőtt a kígyó!");
 
+          clearTimeout(stepTimer);
           if (snakeLen >= nextMilestone) {
             nextMilestone += MILESTONE_STEP;
-            setTimeout(() => {
+            stepTimer = setTimeout(() => {
               burstConfetti(100);
               playFanfare();
               modalTitleEl.textContent = `🎉 ${snakeLen} részes kígyó!`;
@@ -1384,7 +1387,7 @@
               speak(`Gratulálok! A kígyód már ${snakeLen} részes!`);
             }, 650);
           } else {
-            setTimeout(() => {
+            stepTimer = setTimeout(() => {
               locked = false;
               renderQuestion();
             }, 900);
@@ -1417,7 +1420,8 @@
           updateStatsUI(shrank ? -1 : 0);
           speak(`Hoppá! A helyes válasz ${currentQ.ans}.`);
 
-          setTimeout(() => {
+          clearTimeout(stepTimer);
+          stepTimer = setTimeout(() => {
             locked = false;
             renderQuestion();
           }, 1450);
@@ -1425,6 +1429,7 @@
       }
 
       function resetSnake() {
+        clearTimeout(stepTimer);
         snakeLen = START_LEN;
         streak = 0;
         nextMilestone = MILESTONE_STEP;
