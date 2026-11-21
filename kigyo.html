@@ -47,6 +47,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: flex-start;
       padding: 10px 12px 18px;
       position: relative;
     }
@@ -94,7 +95,7 @@
       color: var(--ink);
       font-family: inherit;
       font-weight: 800;
-      font-size: clamp(0.78rem, 2.2vw, 0.9rem);
+      font-size: clamp(0.76rem, 2.2vw, 0.9rem);
       padding: 6px 11px;
       border-radius: 999px;
       cursor: pointer;
@@ -105,8 +106,24 @@
       transition: transform 0.1s ease, background 0.15s ease;
     }
 
-    .pill:hover {
-      background: #fff9db;
+    @media (hover: hover) {
+      .pill:hover {
+        background: #fff9db;
+      }
+      .opt-btn:hover {
+        background: rgba(35, 41, 70, 0.08);
+      }
+      .opt-btn.active:hover {
+        background: var(--ink);
+      }
+      .opt-btn[data-range].active:hover {
+        background: var(--purple);
+      }
+      .num-btn:hover {
+        background: #fff9db;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 0 var(--ink);
+      }
     }
 
     .pill:active {
@@ -131,6 +148,7 @@
       display: inline-flex;
       flex-wrap: wrap;
       justify-content: center;
+      max-width: 100%;
       background: rgba(255, 255, 255, 0.8);
       border: 2.5px solid var(--ink);
       border-radius: 999px;
@@ -146,15 +164,12 @@
       color: var(--ink);
       font-family: inherit;
       font-weight: 800;
-      font-size: clamp(0.75rem, 2.1vw, 0.88rem);
+      font-size: clamp(0.74rem, 2.1vw, 0.88rem);
       padding: 5px 10px;
       border-radius: 999px;
       cursor: pointer;
+      white-space: nowrap;
       transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
-    }
-
-    .opt-btn:hover {
-      background: rgba(35, 41, 70, 0.08);
     }
 
     .opt-btn.active {
@@ -176,7 +191,7 @@
       box-shadow: 0 9px 0 var(--ink), 0 16px 28px rgba(35, 41, 70, 0.18);
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 11px;
     }
 
     /* Stats row */
@@ -201,10 +216,11 @@
       border-radius: 14px;
       padding: 4px 10px;
       font-weight: 900;
-      font-size: clamp(0.82rem, 2.2vw, 0.95rem);
+      font-size: clamp(0.8rem, 2.2vw, 0.95rem);
       display: inline-flex;
       align-items: center;
       gap: 5px;
+      white-space: nowrap;
     }
 
     .stat-chip.snake-len {
@@ -244,7 +260,7 @@
     .snake-stage {
       position: relative;
       width: 100%;
-      height: clamp(165px, 27vw, 225px);
+      height: clamp(132px, 23vh, 215px);
       border: 3.5px solid var(--ink);
       border-radius: 22px;
       overflow: hidden;
@@ -266,7 +282,7 @@
       border: 2px solid var(--ink);
       border-radius: 999px;
       padding: 2px 10px;
-      font-size: 0.78rem;
+      font-size: clamp(0.68rem, 1.9vw, 0.78rem);
       font-weight: 800;
       pointer-events: none;
     }
@@ -276,12 +292,12 @@
       background: linear-gradient(180deg, #eef9ff 0%, #f9f6ff 100%);
       border: 3px solid var(--ink);
       border-radius: 22px;
-      padding: 12px 14px;
+      padding: 11px 12px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
     }
 
     .task-type-pill {
@@ -292,7 +308,7 @@
       border: 2px solid var(--ink);
       border-radius: 999px;
       padding: 2px 11px;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 800;
       color: var(--purple-dark);
     }
@@ -302,15 +318,15 @@
       align-items: center;
       justify-content: center;
       flex-wrap: wrap;
-      gap: 8px;
-      font-size: clamp(2rem, 6.5vw, 3rem);
+      gap: clamp(5px, 1.5vw, 8px);
+      font-size: clamp(1.65rem, 6vw, 2.9rem);
       font-weight: 900;
       line-height: 1.1;
     }
 
     .eq-box {
-      min-width: 54px;
-      padding: 4px 12px;
+      min-width: clamp(42px, 11vw, 56px);
+      padding: 4px clamp(8px, 2.2vw, 12px);
       border-radius: 16px;
       background: #ffffff;
       border: 3px solid var(--ink);
@@ -327,7 +343,7 @@
     .eq-box.unknown {
       background: #ffd93d;
       color: var(--ink);
-      min-width: 62px;
+      min-width: clamp(48px, 12vw, 62px);
       animation: pulseBox 1.3s ease-in-out infinite;
     }
 
@@ -356,7 +372,7 @@
     }
 
     .feedback-msg {
-      font-size: clamp(0.88rem, 2.5vw, 1rem);
+      font-size: clamp(0.84rem, 2.4vw, 0.98rem);
       font-weight: 800;
       min-height: 1.35em;
       color: var(--ink);
@@ -378,7 +394,8 @@
       align-items: center;
       gap: 6px;
       min-height: 24px;
-      font-size: 1rem;
+      font-size: clamp(0.85rem, 2.4vw, 1rem);
+      max-width: 100%;
     }
 
     .helper-bar.hidden {
@@ -394,12 +411,12 @@
       border: 2px solid rgba(35, 41, 70, 0.2);
       border-radius: 12px;
       padding: 3px 7px;
-      max-width: 240px;
+      max-width: min(240px, 100%);
     }
 
     .helper-op {
       font-weight: 900;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       color: var(--muted);
     }
 
@@ -414,31 +431,19 @@
       grid-template-columns: repeat(7, minmax(0, 1fr));
     }
 
-    @media (max-width: 520px) {
-      .numpad.wide {
-        grid-template-columns: repeat(6, minmax(0, 1fr));
-      }
-    }
-
     .num-btn {
       appearance: none;
       border: 3px solid var(--ink);
       background: #ffffff;
       color: var(--ink);
       font-family: inherit;
-      font-size: clamp(1.2rem, 4vw, 1.5rem);
+      font-size: clamp(1.15rem, 4vw, 1.5rem);
       font-weight: 900;
-      height: clamp(46px, 10vw, 56px);
+      height: clamp(44px, 9.5vw, 56px);
       border-radius: 16px;
       cursor: pointer;
       box-shadow: 0 4px 0 var(--ink);
       transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease;
-    }
-
-    .num-btn:hover {
-      background: #fff9db;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 0 var(--ink);
     }
 
     .num-btn:active {
@@ -471,6 +476,64 @@
     @media (hover: none) {
       .kb-hint {
         display: none;
+      }
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 8px 8px 14px;
+      }
+      .app {
+        gap: 8px;
+      }
+      .opt-group {
+        border-radius: 18px;
+      }
+      .game-card {
+        padding: 10px;
+        border-radius: 22px;
+        gap: 9px;
+      }
+      .numpad.wide {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+      .numpad {
+        gap: 6px;
+      }
+      .num-btn {
+        border-radius: 13px;
+      }
+    }
+
+    @media (max-width: 370px) {
+      .pill {
+        padding: 5px 8px;
+        font-size: 0.72rem;
+      }
+      .opt-btn {
+        padding: 4px 7px;
+        font-size: 0.72rem;
+      }
+      .numpad {
+        gap: 5px;
+      }
+      .num-btn {
+        height: 42px;
+        font-size: 1.1rem;
+        border-width: 2.5px;
+      }
+    }
+
+    @media (max-height: 620px) and (orientation: landscape) {
+      .snake-stage {
+        height: 112px;
+      }
+      .question-stage {
+        padding: 8px 10px;
+        gap: 5px;
+      }
+      .num-btn {
+        height: 40px;
       }
     }
 
@@ -843,6 +906,9 @@
       }
       resizeSnakeCanvas();
       window.addEventListener("resize", resizeSnakeCanvas);
+      if ("ResizeObserver" in window) {
+        new ResizeObserver(resizeSnakeCanvas).observe(snakeCanvas);
+      }
 
       function spawnStageParticles(x, y, color, count = 12) {
         for (let i = 0; i < count; i++) {
@@ -862,9 +928,9 @@
 
       function getHeadPos(t, w, h) {
         const cx = w * 0.5;
-        const cy = h * 0.54;
-        const rx = Math.max(60, w * 0.36);
-        const ry = Math.max(28, h * 0.27);
+        const cy = h * 0.55;
+        const rx = Math.max(30, Math.min(w * 0.36, w * 0.5 - 30));
+        const ry = Math.max(18, Math.min(h * 0.27, h * 0.5 - 28));
         const x = cx + Math.sin(t) * rx;
         const y = cy + Math.sin(t * 2) * ry * 0.85;
         return { x, y };
