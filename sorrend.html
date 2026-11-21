@@ -126,6 +126,7 @@
     .opt-group {
       display: inline-flex;
       flex-wrap: wrap;
+      align-items: center;
       justify-content: center;
       max-width: 100%;
       background: rgba(255, 255, 255, 0.88);
@@ -134,6 +135,18 @@
       padding: 3px;
       gap: 3px;
       box-shadow: 0 3px 0 rgba(35, 41, 70, 0.25);
+    }
+
+    .opt-group.hidden {
+      display: none;
+    }
+
+    .opt-label {
+      font-size: clamp(0.72rem, 2vw, 0.84rem);
+      font-weight: 900;
+      color: var(--muted);
+      padding: 0 4px 0 8px;
+      white-space: nowrap;
     }
 
     .opt-btn {
@@ -158,6 +171,11 @@
 
     .opt-btn[data-range].active {
       background: var(--purple);
+      color: #ffffff;
+    }
+
+    .opt-btn[data-len].active {
+      background: var(--mint-dark);
       color: #ffffff;
     }
 
@@ -749,6 +767,16 @@
         <button class="opt-btn" data-range="10-20" type="button">10–20</button>
         <button class="opt-btn" data-range="all" type="button">🌟 Mind</button>
       </div>
+
+      <div class="opt-group hidden" id="length-group" role="group" aria-label="Számsor hossza">
+        <span class="opt-label">🔢 Hossz:</span>
+        <button class="opt-btn active" data-len="5" type="button">5</button>
+        <button class="opt-btn" data-len="6" type="button">6</button>
+        <button class="opt-btn" data-len="7" type="button">7</button>
+        <button class="opt-btn" data-len="8" type="button">8</button>
+        <button class="opt-btn" data-len="9" type="button">9</button>
+        <button class="opt-btn" data-len="10" type="button">10</button>
+      </div>
     </div>
 
     <section class="game-card">
@@ -1060,8 +1088,15 @@
 
       function renderStage(validationResults = null) {
         const count = slots.length;
+        const mobileCols = count > 5 ? Math.ceil(count / 2) : count;
         stairsGridEl.style.setProperty("--cols", String(count));
+        stairsGridEl.style.setProperty("--cols-mobile", String(mobileCols));
         tilesTrayEl.style.setProperty("--cols", String(count));
+        tilesTrayEl.style.setProperty("--cols-mobile", String(mobileCols));
+
+        const isDense = count >= 7;
+        stairsGridEl.classList.toggle("dense", isDense);
+        tilesTrayEl.classList.toggle("dense", isDense);
 
         const nextEmptyIdx = slots.findIndex((s) => s === null);
         const filledCount = slots.filter((s) => s !== null).length;
