@@ -378,6 +378,10 @@
       background: #e6fcf5;
     }
 
+    .card-scale .tag {
+      background: #fff4e6;
+    }
+
     .launch-btn {
       width: 100%;
       margin-top: auto;
@@ -424,6 +428,11 @@
 
     .launch-btn.croc-btn {
       background: linear-gradient(180deg, var(--mint) 0%, var(--mint-dark) 100%);
+      box-shadow: 0 6px 0 var(--ink);
+    }
+
+    .launch-btn.scale-btn {
+      background: linear-gradient(180deg, #fcc419 0%, #f08c00 100%);
       box-shadow: 0 6px 0 var(--ink);
     }
 
@@ -848,6 +857,53 @@
           <span>➔</span>
         </a>
       </article>
+
+      <!-- App 7: Mérleg Műhely (Balance Scale) -->
+      <article class="app-card card-scale" id="card-scale">
+        <span class="card-ribbon">Gomb: <kbd>7</kbd></span>
+        <a class="new-tab-link" href="merleg.html" target="_blank" rel="noopener" title="Megnyitás új lapon">↗</a>
+
+        <div class="mascot-stage" data-mascot="scale" title="Bökd meg a Mérleget!">
+          <svg viewBox="0 0 160 140" aria-hidden="true">
+            <!-- Base & Stand -->
+            <polygon points="62,122 98,122 80,82" fill="#c88441" stroke="#232946" stroke-width="3.5" stroke-linejoin="round" />
+            <!-- Beam -->
+            <line x1="28" y1="54" x2="132" y2="54" stroke="#232946" stroke-width="6" stroke-linecap="round" />
+            <line x1="28" y1="54" x2="132" y2="54" stroke="#ffd93d" stroke-width="3" stroke-linecap="round" />
+            <!-- Left pan -->
+            <line x1="34" y1="54" x2="24" y2="86" stroke="#232946" stroke-width="2.5" />
+            <line x1="34" y1="54" x2="44" y2="86" stroke="#232946" stroke-width="2.5" />
+            <path d="M18 86 Q34 100 50 86 Z" fill="#4dabf7" stroke="#232946" stroke-width="3" />
+            <!-- Right pan -->
+            <line x1="126" y1="54" x2="116" y2="86" stroke="#232946" stroke-width="2.5" />
+            <line x1="126" y1="54" x2="136" y2="86" stroke="#232946" stroke-width="2.5" />
+            <path d="M110 86 Q126 100 142 86 Z" fill="#51cf66" stroke="#232946" stroke-width="3" />
+            <!-- Pivot Owl/Face -->
+            <circle cx="80" cy="54" r="19" fill="#ffd93d" stroke="#232946" stroke-width="3.5" />
+            <circle cx="73" cy="51" r="6" fill="#ffffff" stroke="#232946" stroke-width="2" />
+            <circle cx="87" cy="51" r="6" fill="#ffffff" stroke="#232946" stroke-width="2" />
+            <circle class="pupil" data-cx="73" data-cy="51" cx="73" cy="51" r="2.8" fill="#232946" />
+            <circle class="pupil" data-cx="87" data-cy="51" cx="87" cy="51" r="2.8" fill="#232946" />
+            <path d="M74 61 Q80 66 86 61" fill="none" stroke="#232946" stroke-width="2.5" stroke-linecap="round" />
+          </svg>
+        </div>
+
+        <div class="speech-bubble" id="scale-quote">"Billeg a mérleg! Melyik hiányzó szám teszi egyensúlyba?"</div>
+        <h2 class="card-title">Mérleg Műhely!</h2>
+        <p class="card-desc">
+          Keresd meg a hiányzó súlyt! Gyakorold a ? + 4 = 10 és a kétoldali egyenleteket billegő mérleggel!
+        </p>
+
+        <div class="tags-row">
+          <span class="tag">⚖️ ? =</span>
+          <span class="tag">🔢 1–50</span>
+        </div>
+
+        <a class="launch-btn scale-btn" href="merleg.html" data-app="scale">
+          <span>Irány a Műhely!</span>
+          <span>➔</span>
+        </a>
+      </article>
     </section>
 
     <!-- Funny interactive bar -->
@@ -965,11 +1021,19 @@
       '"1–100 között már tízes blokkokat is számolok!"'
     ];
 
+    const scaleQuotes = [
+      '"Billeg a mérleg! Melyik hiányzó szám teszi egyensúlyba?"',
+      '"Ha túl könnyű a súly, a mérleg továbbra is ferde marad!"',
+      '"Kétoldali egyenlet? 5 + 4 = 6 + ? — szuper agytorna!"',
+      '"A kockák segítenek megszámolni, mennyi hiányzik!"'
+    ];
+
     let owlIdx = 0;
     let monsterIdx = 0;
     let frogIdx = 0;
     let rocketIdx = 0;
     let crocIdx = 0;
+    let scaleIdx = 0;
     document.querySelector('[data-mascot="owl"]').addEventListener("click", () => {
       owlIdx = (owlIdx + 1) % owlQuotes.length;
       document.getElementById("owl-quote").textContent = owlQuotes[owlIdx];
@@ -998,6 +1062,12 @@
       crocIdx = (crocIdx + 1) % crocQuotes.length;
       document.getElementById("croc-quote").textContent = crocQuotes[crocIdx];
       playTone(320, 0.09, "square", 0.05);
+    });
+
+    document.querySelector('[data-mascot="scale"]').addEventListener("click", () => {
+      scaleIdx = (scaleIdx + 1) % scaleQuotes.length;
+      document.getElementById("scale-quote").textContent = scaleQuotes[scaleIdx];
+      playTone(540, 0.09, "triangle", 0.06);
     });
 
     // --- Math Jokes ---
@@ -1090,7 +1160,8 @@
       { el: document.getElementById("card-rain"), url: "hulloszamok.html", name: "Számeső!" },
       { el: document.getElementById("card-snake"), url: "kigyo.html", name: "Számkígyó!" },
       { el: document.getElementById("card-space"), url: "sorrend.html", name: "Űrlépcső!" },
-      { el: document.getElementById("card-croc"), url: "krokodil.html", name: "Krokodil Kóstoló!" }
+      { el: document.getElementById("card-croc"), url: "krokodil.html", name: "Krokodil Kóstoló!" },
+      { el: document.getElementById("card-scale"), url: "merleg.html", name: "Mérleg Műhely!" }
     ];
 
     let spinning = false;
@@ -1119,7 +1190,7 @@
       }, 130);
     });
 
-    // --- Keyboard Shortcuts (1-6, C, J) ---
+    // --- Keyboard Shortcuts (1-7, C, J) ---
     window.addEventListener("keydown", (e) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
       const key = e.key.toLowerCase();
@@ -1141,6 +1212,9 @@
       } else if (key === "6") {
         playCheer();
         window.location.href = "krokodil.html";
+      } else if (key === "7") {
+        playCheer();
+        window.location.href = "merleg.html";
       } else if (key === "c") {
         burstConfetti(90);
         playCheer();

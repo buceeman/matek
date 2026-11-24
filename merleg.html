@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mérleg Műhely! — Hiányzó számok és egyensúly</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#ff922b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="MatekAppok" />
+  <style>
+    :root {
+      --bg-top: #ffd8a8;
+      --bg-mid: #ffe8cc;
+      --bg-bot: #fff4e6;
+      --card: #fffdf9;
+      --ink: #2b2d42;
+      --ink-soft: #5c647d;
+      --amber: #ff922b;
+      --amber-dark: #d9480f;
+      --blue: #339af0;
+      --blue-dark: #1c7ed6;
+      --green: #51cf66;
+      --green-dark: #2f9e44;
+      --yellow: #ffd43b;
+      --coral: #ff6b6b;
+      --wood: #e6b88a;
+      --wood-dark: #a66c38;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: "Comic Sans MS", "Chalkboard SE", "Fredoka", "Nunito", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      touch-action: manipulation;
+      overflow-x: hidden;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        linear-gradient(rgba(43, 45, 66, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(43, 45, 66, 0.04) 1px, transparent 1px),
+        linear-gradient(170deg, var(--bg-top) 0%, var(--bg-mid) 50%, var(--bg-bot) 100%);
+      background-size: 28px 28px, 28px 28px, 100% 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 14px 12px;
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 650px;
+      background: var(--card);
+      border-radius: 30px;
+      border: 4px solid var(--ink);
+      box-shadow: 0 10px 0 var(--ink), 0 20px 40px rgba(43, 45, 66, 0.16);
+      padding: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .buddy-picker {
+      display: flex;
+      gap: 5px;
+      background: #fff4e6;
+      border: 2.5px solid var(--ink);
+      padding: 4px;
+      border-radius: 999px;
+    }
+
+    .buddy-btn {
+      border: none;
+      background: transparent;
+      font-size: 21px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: transform 0.15s, background 0.15s;
+    }
+
+    .buddy-btn.active {
+      background: var(--yellow);
+      transform: scale(1.1);
+      box-shadow: 0 2px 0 var(--ink);
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .icon-pill {
+      border: 2.5px solid var(--ink);
+      background: #ffffff;
+      color: var(--ink);
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 6px 11px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 3px 0 var(--ink);
+      transition: transform 0.1s, box-shadow 0.1s;
+      text-decoration: none;
+    }
+
+    .icon-pill:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 var(--ink);
+    }
+
+    /* Mode & Range Selectors */
+    .mode-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+
+    .range-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 11px;
+    }
+
+    .mode-btn, .range-btn {
+      border: 2.5px solid var(--ink);
+      border-radius: 14px;
+      padding: 9px 4px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      background: #ffffff;
+      color: var(--ink);
+      box-shadow: 0 4px 0 var(--ink);
+      transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+    }
+
+    .range-btn {
+      padding: 7px 6px;
+    }
+
+    .mode-btn.active {
+      background: var(--amber);
+      color: #ffffff;
+    }
+
+    .range-btn.active {
+      background: var(--blue);
+      color: #ffffff;
+    }
+
+    .mode-btn:active, .range-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 var(--ink);
+    }
+
+    /* Progress & Streak */
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .progress-track {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: #fff4e6;
+      border: 2.5px solid var(--ink);
+      padding: 5px 8px;
+      border-radius: 999px;
+    }
+
+    .step-dot {
+      flex: 1;
+      height: 11px;
+      border-radius: 999px;
+      background: #ffe8cc;
+      transition: background 0.25s, transform 0.25s;
+    }
+
+    .step-dot.done {
+      background: var(--green);
+      transform: scaleY(1.15);
+    }
+
+    .step-dot.current {
+      background: var(--amber);
+      animation: pulse 1.1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+
+    .streak-badge {
+      background: var(--yellow);
+      border: 2.5px solid var(--ink);
+      color: var(--ink);
+      font-weight: 900;
+      font-size: 14px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      box-shadow: 0 3px 0 var(--ink);
+      white-space: nowrap;
+    }
+
+    /* Workshop Stage */
+    .stage {
+      background: linear-gradient(180deg, #e7f5ff 0%, #f8f9fa 100%);
+      border-radius: 24px;
+      padding: 14px 12px 16px;
+      text-align: center;
+      margin-bottom: 14px;
+      border: 3px solid var(--ink);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .speech-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .buddy-badge {
+      font-size: 34px;
+      line-height: 1;
+      transition: transform 0.2s;
+    }
+
+    .buddy-badge.bounce {
+      animation: bouncePop 0.45s ease;
+    }
+
+    @keyframes bouncePop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.28) rotate(-6deg); }
+      75% { transform: scale(0.95) rotate(5deg); }
+      100% { transform: scale(1); }
+    }
+
+    .speech-bubble {
+      background: #ffffff;
+      border: 2.5px solid var(--ink);
+      border-radius: 16px;
+      padding: 8px 14px;
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--ink);
+      box-shadow: 0 3px 0 rgba(43, 45, 66, 0.12);
+      max-width: 460px;
+    }
+
+    /* Balance Scale Visual */
+    .scale-scene {
+      position: relative;
+      padding-top: 8px;
+      padding-bottom: 8px;
+    }
+
+    .beam-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform-origin: center 22px;
+    }
+
+    .beam-bar {
+      height: 16px;
+      background: linear-gradient(180deg, #ffd43b 0%, #f59f00 100%);
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      position: relative;
+      margin: 0 36px;
+      box-shadow: 0 3px 0 rgba(43, 45, 66, 0.15);
+    }
+
+    .beam-pivot-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 3.5px solid var(--ink);
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+    }
+
+    .pans-row {
+      display: grid;
+      grid-template-columns: 1fr 64px 1fr;
+      align-items: start;
+      margin-top: -4px;
+    }
+
+    .pan-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .pan-ropes {
+      width: 70%;
+      height: 24px;
+      border-left: 3px solid var(--ink);
+      border-right: 3px solid var(--ink);
+      position: relative;
+    }
+
+    .pan-plate {
+      width: 100%;
+      background: #ffffff;
+      border: 3px solid var(--ink);
+      border-radius: 20px;
+      padding: 12px 8px;
+      min-height: 104px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 6px 0 var(--wood-dark);
+      transition: background 0.25s, border-color 0.25s;
+    }
+
+    .pan-plate.balanced {
+      background: #ebfbee;
+      border-color: var(--green-dark);
+      box-shadow: 0 6px 0 var(--green-dark);
+    }
+
+    .pan-plate.wrong {
+      background: #ffe3e3;
+      animation: shake 0.35s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    .pan-expr {
+      font-size: clamp(1.45rem, 4.5vw, 2.1rem);
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .missing-box {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 46px;
+      height: 44px;
+      padding: 0 10px;
+      border-radius: 12px;
+      border: 3px dashed var(--amber-dark);
+      background: #fff9db;
+      color: var(--amber-dark);
+      font-weight: 900;
+    }
+
+    .missing-box.filled {
+      border-style: solid;
+      border-color: var(--green-dark);
+      background: var(--green);
+      color: #ffffff;
+    }
+
+    .pan-blocks {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 3px;
+      max-width: 170px;
+      min-height: 16px;
+    }
+
+    .unit-block {
+      width: 13px;
+      height: 13px;
+      border-radius: 4px;
+      border: 1.5px solid var(--ink);
+      background: var(--blue);
+      display: inline-block;
+    }
+
+    .unit-block.unknown {
+      background: var(--yellow);
+      border-style: dashed;
+    }
+
+    .ten-block {
+      padding: 0 5px;
+      height: 17px;
+      border-radius: 5px;
+      border: 1.5px solid var(--ink);
+      background: #74c0fc;
+      font-size: 10px;
+      font-weight: 900;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .fulcrum-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 12px;
+    }
+
+    .fulcrum-tri {
+      width: 0;
+      height: 0;
+      border-left: 24px solid transparent;
+      border-right: 24px solid transparent;
+      border-bottom: 52px solid var(--wood-dark);
+      position: relative;
+    }
+
+    .eq-badge {
+      margin-top: -12px;
+      background: var(--yellow);
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      font-weight: 900;
+      box-shadow: 0 3px 0 var(--ink);
+      z-index: 2;
+    }
+
+    .eq-badge.ok {
+      background: var(--green);
+      color: #ffffff;
+    }
+
+    /* Weight Pad */
+    .weight-pad {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .weight-pad.compact {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .weight-btn {
+      border: 2.5px solid var(--ink);
+      border-radius: 16px;
+      background: #ffffff;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 20px;
+      font-weight: 900;
+      padding: 10px 4px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 var(--ink);
+      transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+    }
+
+    .weight-btn:hover {
+      background: #fff9db;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 var(--ink);
+    }
+
+    .weight-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 var(--ink);
+    }
+
+    /* Sticker Bar */
+    .sticker-bar {
+      background: #fff4e6;
+      border: 2.5px solid var(--ink);
+      border-radius: 18px;
+      padding: 9px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .sticker-label {
+      font-weight: 900;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .sticker-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 20px;
+      color: var(--ink-soft);
+      font-weight: 700;
+    }
+
+    .kb-hint {
+      text-align: center;
+      font-size: 12px;
+      color: var(--ink-soft);
+      font-weight: 800;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(43, 45, 66, 0.58);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 90;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--card);
+      border-radius: 28px;
+      border: 4px solid var(--ink);
+      box-shadow: 0 12px 0 var(--ink);
+      padding: 26px 22px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+      animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.75); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-emoji {
+      font-size: 62px;
+      margin-bottom: 6px;
+    }
+
+    .modal-title {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .modal-text {
+      margin: 0 0 18px;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--ink-soft);
+    }
+
+    .big-play-btn {
+      border: 3px solid var(--ink);
+      border-radius: 999px;
+      background: var(--green);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 20px;
+      font-weight: 900;
+      padding: 12px 28px;
+      cursor: pointer;
+      box-shadow: 0 5px 0 var(--ink);
+      transition: transform 0.1s;
+    }
+
+    .big-play-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 var(--ink);
+    }
+
+    @media (max-width: 520px) {
+      .mode-bar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .weight-pad {
+        grid-template-columns: repeat(5, 1fr);
+      }
+      .pans-row {
+        grid-template-columns: 1fr 44px 1fr;
+      }
+      .beam-bar {
+        margin: 0 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <main class="app">
+    <div class="top-bar">
+      <div class="buddy-picker" aria-label="Válassz mestert">
+        <button class="buddy-btn active" data-buddy="🦉" title="Bagoly">🦉</button>
+        <button class="buddy-btn" data-buddy="🤖" title="Robot">🤖</button>
+        <button class="buddy-btn" data-buddy="🦊" title="Róka">🦊</button>
+        <button class="buddy-btn" data-buddy="🐻" title="Maci">🐻</button>
+      </div>
+
+      <div class="top-controls">
+        <a href="index.html" class="icon-pill" title="Vissza a főoldalra">🏠 Főoldal</a>
+        <button id="toggle-helper" class="icon-pill" title="Súlykockák mutatása vagy elrejtése">🧱 Kockák: BE</button>
+        <button id="toggle-tts" class="icon-pill" title="Motiváló hangosbemondó be vagy ki" aria-pressed="true">🗣️ Beszéd: BE</button>
+        <button id="toggle-sound" class="icon-pill" title="Hang be vagy ki">🔊</button>
+      </div>
+    </div>
+
+    <div class="mode-bar">
+      <button class="mode-btn active" data-mode="add">➕ Összeadás</button>
+      <button class="mode-btn" data-mode="sub">➖ Kivonás</button>
+      <button class="mode-btn" data-mode="two">⚖️ Kétoldali</button>
+      <button class="mode-btn" data-mode="mix">🎲 Vegyes</button>
+    </div>
+
+    <div class="range-bar">
+      <button class="range-btn active" data-range="1-10">1 – 10</button>
+      <button class="range-btn" data-range="1-20">1 – 20</button>
+      <button class="range-btn" data-range="1-50">🌟 1 – 50</button>
+    </div>
+
+    <div class="status-row">
+      <div class="progress-track" id="progress-track"></div>
+      <div class="streak-badge" id="streak-badge">🔥 0</div>
+    </div>
+
+    <section class="stage">
+      <div class="speech-row">
+        <div class="buddy-badge" id="buddy-badge">🦉</div>
+        <div class="speech-bubble" id="speech-bubble">Tegyük egyensúlyba a mérleget! Melyik súly hiányzik?</div>
+      </div>
+
+      <div class="scale-scene" aria-live="polite">
+        <div class="beam-wrap" id="beam-wrap">
+          <div class="beam-bar">
+            <div class="beam-pivot-dot"></div>
+          </div>
+
+          <div class="pans-row">
+            <div class="pan-col" id="left-pan-col">
+              <div class="pan-ropes"></div>
+              <div class="pan-plate" id="left-pan">
+                <div class="pan-expr" id="left-expr"></div>
+                <div class="pan-blocks" id="left-blocks"></div>
+              </div>
+            </div>
+
+            <div class="fulcrum-col">
+              <div class="fulcrum-tri"></div>
+              <div class="eq-badge" id="eq-badge">⚖️</div>
+            </div>
+
+            <div class="pan-col" id="right-pan-col">
+              <div class="pan-ropes"></div>
+              <div class="pan-plate" id="right-pan">
+                <div class="pan-expr" id="right-expr"></div>
+                <div class="pan-blocks" id="right-blocks"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="weight-pad" id="weight-pad" aria-label="Súlygombok"></section>
+
+    <div class="sticker-bar">
+      <span class="sticker-label" id="sticker-label">🏆 Matricák (0):</span>
+      <div class="sticker-list" id="sticker-list">Oldj meg 10-et egy matricáért!</div>
+    </div>
+
+    <div class="kb-hint">Tipp géphez: A billentyűzeten is beírhatod a számot (pl. 7 + Enter)!</div>
+  </main>
+
+  <div class="modal-overlay" id="modal">
+    <div class="modal-card">
+      <div class="modal-emoji" id="modal-emoji">⚖️</div>
+      <h2 class="modal-title" id="modal-title">Tökéletes egyensúly!</h2>
+      <p class="modal-text" id="modal-text">Megoldottál 10 feladatot és nyertél egy új matricát!</p>
+      <button class="big-play-btn" id="play-again-btn">Újra! 🚀</button>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const ROUND_LENGTH = 10;
+      const STICKERS = ["⚖️", "🦉", "🔧", "🚀", "🌟", "🏆", "🤖", "🦊", "🎨", "👑", "🧩", "🌈"];
+      const PRAISE = [
+        "Tökéletes egyensúly! ⚖️✨",
+        "Mester-mérnök vagy! 🔧🏆",
+        "Puff! Pontosan középre állt! 🎯",
+        "Szuper matek-agy! 🧠⚡",
+        "Zseniális kiegyensúlyozás! 🌟",
+        "Ügyes vagy! Jöhet a következő! 🚀"
+      ];
+
+      let mode = "add"; // "add" | "sub" | "two" | "mix"
+      let range = "1-10"; // "1-10" | "1-20" | "1-50"
+      let buddy = "🦉";
+      let showHelper = true;
+      let soundOn = true;
+      let ttsOn = true;
+
+      let step = 0;
+      let streak = 0;
+      let locked = false;
+      let problem = null; // { leftParts, rightParts, leftBase, rightBase, missingSide, missingSign, answer }
+      let kbBuffer = "";
+      let kbTimer = null;
+      let stickers = [];
+
+      try {
+        stickers = JSON.parse(localStorage.getItem("matek_scale_stickers") || "[]");
+      } catch (_) {
+        stickers = [];
+      }
+
+      const buddyBadge = document.getElementById("buddy-badge");
+      const speechBubble = document.getElementById("speech-bubble");
+      const beamWrap = document.getElementById("beam-wrap");
+      const leftPanCol = document.getElementById("left-pan-col");
+      const rightPanCol = document.getElementById("right-pan-col");
+      const leftPan = document.getElementById("left-pan");
+      const rightPan = document.getElementById("right-pan");
+      const leftExpr = document.getElementById("left-expr");
+      const rightExpr = document.getElementById("right-expr");
+      const leftBlocks = document.getElementById("left-blocks");
+      const rightBlocks = document.getElementById("right-blocks");
+      const eqBadge = document.getElementById("eq-badge");
+      const weightPad = document.getElementById("weight-pad");
+      const progressTrack = document.getElementById("progress-track");
+      const streakBadge = document.getElementById("streak-badge");
+      const stickerLabel = document.getElementById("sticker-label");
+      const stickerList = document.getElementById("sticker-list");
+      const modal = document.getElementById("modal");
+      const modalEmoji = document.getElementById("modal-emoji");
+      const modalText = document.getElementById("modal-text");
+      const toggleHelperBtn = document.getElementById("toggle-helper");
+      const toggleTtsBtn = document.getElementById("toggle-tts");
+      const toggleSoundBtn = document.getElementById("toggle-sound");
+
+      function speakMotivation(text, opts = {}) {
+        if (!soundOn || !ttsOn || !text) return;
+        try {
+          if (!("speechSynthesis" in window)) return;
+          const clean = String(text)
+            .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, "")
+            .replace(/\s+/g, " ")
+            .trim();
+          if (!clean) return;
+          window.speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(clean);
+          utter.lang = "hu-HU";
+          const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+          const match = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("hu"));
+          if (match) utter.voice = match;
+          utter.pitch = opts.pitch ?? 1.1;
+          utter.rate = opts.rate ?? 1.02;
+          window.speechSynthesis.speak(utter);
+        } catch (_) {}
+      }
+
+      // Web Audio
+      let audioCtx = null;
+      function getCtx() {
+        if (!audioCtx) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (Ctx) audioCtx = new Ctx();
+        }
+        if (audioCtx && audioCtx.state === "suspended") {
+          audioCtx.resume().catch(() => {});
+        }
+        return audioCtx;
+      }
+
+      function tone(freq, dur, type = "triangle", gainVal = 0.08, delay = 0) {
+        if (!soundOn) return;
+        const ctx = getCtx();
+        if (!ctx) return;
+        const t = ctx.currentTime + delay;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(gainVal, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + dur);
+      }
+
+      function playBalanceWin() {
+        tone(440, 0.09, "triangle", 0.08, 0);
+        tone(554, 0.1, "triangle", 0.08, 0.08);
+        tone(659, 0.12, "triangle", 0.09, 0.16);
+        tone(880, 0.2, "triangle", 0.09, 0.24);
+      }
+
+      function playWrong() {
+        tone(220, 0.14, "sawtooth", 0.05, 0);
+        tone(175, 0.18, "sawtooth", 0.05, 0.12);
+      }
+
+      function playFanfare() {
+        [523, 659, 784, 1046].forEach((f, i) => {
+          tone(f, 0.18, "triangle", 0.09, i * 0.1);
+        });
+      }
+
+      // Confetti
+      const canvas = document.getElementById("confetti-canvas");
+      const ctx2d = canvas.getContext("2d");
+      let particles = [];
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
+
+      function burstConfetti(count = 45) {
+        const colors = ["#ff922b", "#ffd43b", "#51cf66", "#339af0", "#ff6b6b"];
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: canvas.width / 2 + (Math.random() - 0.5) * 180,
+            y: canvas.height * 0.45,
+            vx: (Math.random() - 0.5) * 11,
+            vy: -Math.random() * 10 - 3,
+            size: Math.random() * 7 + 5,
+            color: colors[i % colors.length],
+            rot: Math.random() * Math.PI * 2,
+            vrot: (Math.random() - 0.5) * 0.25,
+            life: 1
+          });
+        }
+      }
+
+      function animateConfetti() {
+        ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+        particles = particles.filter((p) => p.life > 0.02);
+        for (const p of particles) {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.32;
+          p.rot += p.vrot;
+          p.life -= 0.015;
+          ctx2d.save();
+          ctx2d.globalAlpha = p.life;
+          ctx2d.translate(p.x, p.y);
+          ctx2d.rotate(p.rot);
+          ctx2d.fillStyle = p.color;
+          ctx2d.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
+          ctx2d.restore();
+        }
+        requestAnimationFrame(animateConfetti);
+      }
+      animateConfetti();
+
+      function randInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function getMaxNum() {
+        if (range === "1-10") return 10;
+        if (range === "1-20") return 20;
+        return 50;
+      }
+
+      function setBeamTilt(deg) {
+        beamWrap.style.transform = `rotate(${deg}deg)`;
+        leftPanCol.style.transform = `rotate(${-deg}deg)`;
+        rightPanCol.style.transform = `rotate(${-deg}deg)`;
+      }
+
+      function generateProblem() {
+        const maxNum = getMaxNum();
+        let activeMode = mode;
+        if (activeMode === "mix") {
+          const choices = ["add", "sub", "two"];
+          activeMode = choices[randInt(0, choices.length - 1)];
+        }
+
+        const missingOnLeft = Math.random() < 0.5;
+
+        if (activeMode === "add") {
+          const total = randInt(2, maxNum);
+          const known = randInt(1, total - 1);
+          const ans = total - known;
+          const flipOrder = Math.random() < 0.5;
+          const exprParts = flipOrder ? [known, "+", "?"] : ["?", "+", known];
+          return {
+            leftParts: missingOnLeft ? exprParts : [total],
+            rightParts: missingOnLeft ? [total] : exprParts,
+            leftKnown: missingOnLeft ? known : total,
+            rightKnown: missingOnLeft ? total : known,
+            missingSide: missingOnLeft ? "left" : "right",
+            answer: ans,
+            initialTilt: missingOnLeft ? 7 : -7
+          };
+        }
+
+        if (activeMode === "sub") {
+          const total = randInt(2, maxNum);
+          const subtrahend = randInt(1, total - 1);
+          const res = total - subtrahend;
+          const hideSubtrahend = Math.random() < 0.6;
+          if (hideSubtrahend) {
+            const exprParts = [total, "-", "?"];
+            return {
+              leftParts: missingOnLeft ? exprParts : [res],
+              rightParts: missingOnLeft ? [res] : exprParts,
+              leftKnown: missingOnLeft ? total : res,
+              rightKnown: missingOnLeft ? res : total,
+              missingSide: missingOnLeft ? "left" : "right",
+              answer: subtrahend,
+              initialTilt: missingOnLeft ? -6 : 6
+            };
+          } else {
+            const exprParts = ["?", "-", subtrahend];
+            return {
+              leftParts: missingOnLeft ? exprParts : [res],
+              rightParts: missingOnLeft ? [res] : exprParts,
+              leftKnown: missingOnLeft ? 0 : res,
+              rightKnown: missingOnLeft ? res : 0,
+              missingSide: missingOnLeft ? "left" : "right",
+              answer: total,
+              initialTilt: missingOnLeft ? 7 : -7
+            };
+          }
+        }
+
+        // "two": e.g., 5 + 4 = 6 + ?
+        const total = randInt(4, maxNum);
+        const a1 = randInt(1, total - 1);
+        const a2 = total - a1;
+        const b1 = randInt(1, total - 1);
+        const ans = total - b1;
+        const leftFull = [a1, "+", a2];
+        const rightMissing = Math.random() < 0.5 ? [b1, "+", "?"] : ["?", "+", b1];
+        return {
+          leftParts: missingOnLeft ? rightMissing : leftFull,
+          rightParts: missingOnLeft ? leftFull : rightMissing,
+          leftKnown: missingOnLeft ? b1 : total,
+          rightKnown: missingOnLeft ? total : b1,
+          missingSide: missingOnLeft ? "left" : "right",
+          answer: ans,
+          initialTilt: missingOnLeft ? 7 : -7
+        };
+      }
+
+      function renderExpr(container, parts, filledAnswer = null) {
+        container.innerHTML = "";
+        parts.forEach((p) => {
+          if (p === "?") {
+            const box = document.createElement("span");
+            box.className = "missing-box" + (filledAnswer !== null ? " filled" : "");
+            box.textContent = filledAnswer !== null ? String(filledAnswer) : "?";
+            container.appendChild(box);
+          } else {
+            const span = document.createElement("span");
+            span.textContent = String(p);
+            container.appendChild(span);
+          }
+        });
+      }
+
+      function renderBlocks(container, val, hasUnknown) {
+        container.innerHTML = "";
+        if (!showHelper) return;
+
+        if (val <= 20) {
+          for (let i = 0; i < val; i++) {
+            const b = document.createElement("span");
+            b.className = "unit-block";
+            container.appendChild(b);
+          }
+        } else {
+          const tens = Math.floor(val / 10);
+          const ones = val % 10;
+          for (let i = 0; i < tens; i++) {
+            const tb = document.createElement("span");
+            tb.className = "ten-block";
+            tb.textContent = "10";
+            container.appendChild(tb);
+          }
+          for (let i = 0; i < ones; i++) {
+            const b = document.createElement("span");
+            b.className = "unit-block";
+            container.appendChild(b);
+          }
+        }
+        if (hasUnknown) {
+          const q = document.createElement("span");
+          q.className = "unit-block unknown";
+          container.appendChild(q);
+        }
+      }
+
+      function renderPad() {
+        weightPad.innerHTML = "";
+        const maxNum = getMaxNum();
+        if (maxNum <= 20) {
+          weightPad.classList.remove("compact");
+          for (let n = 0; n <= maxNum; n++) {
+            const btn = document.createElement("button");
+            btn.className = "weight-btn";
+            btn.textContent = String(n);
+            btn.addEventListener("click", () => handleGuess(n));
+            weightPad.appendChild(btn);
+          }
+        } else {
+          weightPad.classList.add("compact");
+          const opts = new Set([problem.answer]);
+          while (opts.size < 6) {
+            const delta = randInt(-9, 9);
+            const cand = Math.max(0, Math.min(50, problem.answer + delta));
+            opts.add(cand);
+          }
+          [...opts].sort((a, b) => a - b).forEach((n) => {
+            const btn = document.createElement("button");
+            btn.className = "weight-btn";
+            btn.textContent = String(n);
+            btn.addEventListener("click", () => handleGuess(n));
+            weightPad.appendChild(btn);
+          });
+        }
+      }
+
+      function renderProgress() {
+        progressTrack.innerHTML = "";
+        for (let i = 0; i < ROUND_LENGTH; i++) {
+          const dot = document.createElement("div");
+          dot.className = "step-dot";
+          if (i < step) dot.classList.add("done");
+          else if (i === step) dot.classList.add("current");
+          progressTrack.appendChild(dot);
+        }
+        streakBadge.textContent = `🔥 ${streak}`;
+      }
+
+      function renderStickers() {
+        stickerLabel.textContent = `🏆 Matricák (${stickers.length}):`;
+        if (stickers.length === 0) {
+          stickerList.textContent = "Oldj meg 10-et egy matricáért!";
+        } else {
+          stickerList.textContent = stickers.join(" ");
+        }
+      }
+
+      function nextProblem() {
+        locked = false;
+        kbBuffer = "";
+        problem = generateProblem();
+
+        leftPan.classList.remove("balanced", "wrong");
+        rightPan.classList.remove("balanced", "wrong");
+        eqBadge.classList.remove("ok");
+        eqBadge.textContent = "⚖️";
+
+        renderExpr(leftExpr, problem.leftParts);
+        renderExpr(rightExpr, problem.rightParts);
+        renderBlocks(leftBlocks, problem.leftKnown, problem.missingSide === "left");
+        renderBlocks(rightBlocks, problem.rightKnown, problem.missingSide === "right");
+        setBeamTilt(problem.initialTilt);
+        renderPad();
+        renderProgress();
+      }
+
+      function handleGuess(val) {
+        if (locked) return;
+        const targetPan = problem.missingSide === "left" ? leftPan : rightPan;
+
+        if (val === problem.answer) {
+          locked = true;
+          streak++;
+          step++;
+
+          renderExpr(
+            problem.missingSide === "left" ? leftExpr : rightExpr,
+            problem.missingSide === "left" ? problem.leftParts : problem.rightParts,
+            problem.answer
+          );
+
+          setBeamTilt(0);
+          leftPan.classList.add("balanced");
+          rightPan.classList.add("balanced");
+          eqBadge.classList.add("ok");
+          eqBadge.textContent = "=";
+
+          buddyBadge.classList.remove("bounce");
+          void buddyBadge.offsetWidth;
+          buddyBadge.classList.add("bounce");
+
+          const msg = PRAISE[randInt(0, PRAISE.length - 1)];
+          speechBubble.textContent = msg;
+          playBalanceWin();
+          speakMotivation(msg);
+          burstConfetti(40);
+          renderProgress();
+
+          setTimeout(() => {
+            if (step >= ROUND_LENGTH) {
+              finishRound();
+            } else {
+              nextProblem();
+            }
+          }, 1100);
+        } else {
+          streak = 0;
+          targetPan.classList.remove("wrong");
+          void targetPan.offsetWidth;
+          targetPan.classList.add("wrong");
+
+          const tooSmall = val < problem.answer;
+          const hint = tooSmall
+            ? "Ez még kicsit könnyű! Próbálj nagyobb számot! ⬆️"
+            : "Hoppá, ez túl nehéz! Próbálj kisebb számot! ⬇️";
+          speechBubble.textContent = hint;
+          playWrong();
+          speakMotivation(hint, { pitch: 1.0, rate: 0.98 });
+          renderProgress();
+        }
+      }
+
+      function finishRound() {
+        const newSticker = STICKERS[stickers.length % STICKERS.length];
+        stickers.push(newSticker);
+        try {
+          localStorage.setItem("matek_scale_stickers", JSON.stringify(stickers));
+        } catch (_) {}
+        renderStickers();
+        modalEmoji.textContent = newSticker;
+        modalText.textContent = `Megoldottál ${ROUND_LENGTH} feladatot és nyertél egy új matricát: ${newSticker}`;
+        modal.classList.add("open");
+        burstConfetti(90);
+        playFanfare();
+        speakMotivation("Fantasztikus! Minden mérleg egyensúlyban van, nyertél egy új matricát!");
+      }
+
+      document.querySelectorAll(".buddy-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".buddy-btn").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          buddy = btn.dataset.buddy;
+          buddyBadge.textContent = buddy;
+          tone(520, 0.08, "triangle", 0.06);
+        });
+      });
+
+      document.querySelectorAll(".mode-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".mode-btn").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          mode = btn.dataset.mode;
+          step = 0;
+          nextProblem();
+        });
+      });
+
+      document.querySelectorAll(".range-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".range-btn").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          range = btn.dataset.range;
+          step = 0;
+          nextProblem();
+        });
+      });
+
+      toggleHelperBtn.addEventListener("click", () => {
+        showHelper = !showHelper;
+        toggleHelperBtn.textContent = showHelper ? "🧱 Kockák: BE" : "🧱 Kockák: KI";
+        renderBlocks(leftBlocks, problem.leftKnown, problem.missingSide === "left");
+        renderBlocks(rightBlocks, problem.rightKnown, problem.missingSide === "right");
+      });
+
+      toggleTtsBtn.addEventListener("click", () => {
+        ttsOn = !ttsOn;
+        toggleTtsBtn.textContent = ttsOn ? "🗣️ Beszéd: BE" : "🗣️ Beszéd: KI";
+        toggleTtsBtn.setAttribute("aria-pressed", String(ttsOn));
+        if (!ttsOn && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        } else if (ttsOn) {
+          speakMotivation("Szia! Tegyük egyensúlyba a mérleget!");
+        }
+      });
+
+      toggleSoundBtn.addEventListener("click", () => {
+        soundOn = !soundOn;
+        toggleSoundBtn.textContent = soundOn ? "🔊" : "🔇";
+        if (!soundOn && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        } else if (soundOn) {
+          tone(600, 0.08, "triangle", 0.06);
+        }
+      });
+
+      document.getElementById("play-again-btn").addEventListener("click", () => {
+        modal.classList.remove("open");
+        step = 0;
+        nextProblem();
+      });
+
+      window.addEventListener("keydown", (e) => {
+        if (modal.classList.contains("open")) {
+          if (e.key === "Enter" || e.key === " ") {
+            modal.classList.remove("open");
+            step = 0;
+            nextProblem();
+          }
+          return;
+        }
+        if (e.key >= "0" && e.key <= "9") {
+          kbBuffer += e.key;
+          clearTimeout(kbTimer);
+          const num = parseInt(kbBuffer, 10);
+          if (kbBuffer.length >= 2 || num * 10 > getMaxNum()) {
+            kbBuffer = "";
+            handleGuess(num);
+          } else {
+            kbTimer = setTimeout(() => {
+              const val = parseInt(kbBuffer, 10);
+              kbBuffer = "";
+              if (!Number.isNaN(val)) handleGuess(val);
+            }, 480);
+          }
+        } else if (e.key === "Enter" && kbBuffer) {
+          clearTimeout(kbTimer);
+          const val = parseInt(kbBuffer, 10);
+          kbBuffer = "";
+          if (!Number.isNaN(val)) handleGuess(val);
+        }
+      });
+
+      renderStickers();
+      nextProblem();
+    })();
+  </script>
+</body>
+</html>
