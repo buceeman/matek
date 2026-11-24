@@ -1,4 +1,4 @@
-const CACHE_NAME = "matekappok-v1";
+const CACHE_NAME = "matekappok-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const ASSETS = [
   "./hulloszamok.html",
   "./kigyo.html",
   "./sorrend.html",
+  "./krokodil.html",
   "./manifest.webmanifest",
   "./favicon.svg",
   "./icon-192.png",

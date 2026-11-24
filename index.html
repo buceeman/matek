@@ -374,6 +374,10 @@
       background: #e7f5ff;
     }
 
+    .card-croc .tag {
+      background: #e6fcf5;
+    }
+
     .launch-btn {
       width: 100%;
       margin-top: auto;
@@ -415,6 +419,11 @@
 
     .launch-btn.space-btn {
       background: linear-gradient(180deg, #ff922b 0%, #e8590c 100%);
+      box-shadow: 0 6px 0 var(--ink);
+    }
+
+    .launch-btn.croc-btn {
+      background: linear-gradient(180deg, var(--mint) 0%, var(--mint-dark) 100%);
       box-shadow: 0 6px 0 var(--ink);
     }
 
@@ -800,6 +809,45 @@
           <span>➔</span>
         </a>
       </article>
+
+      <!-- App 6: Krokodil Kóstoló (<, >, =) -->
+      <article class="app-card card-croc" id="card-croc">
+        <span class="card-ribbon">Gomb: <kbd>6</kbd></span>
+        <a class="new-tab-link" href="krokodil.html" target="_blank" rel="noopener" title="Megnyitás új lapon">↗</a>
+
+        <div class="mascot-stage" data-mascot="croc" title="Bökd meg Krokot!">
+          <svg viewBox="0 0 160 140" aria-hidden="true">
+            <!-- Croc body/head -->
+            <path d="M26 88 C26 50, 56 34, 88 34 C118 34, 138 50, 140 72 L96 72 L138 96 C126 112, 98 118, 66 118 C40 118, 26 106, 26 88 Z" fill="#51cf66" stroke="#232946" stroke-width="4" stroke-linejoin="round" />
+            <!-- Belly/jaw highlight -->
+            <path d="M96 72 L134 72 L126 80 L118 72 L110 80 L102 72" fill="#ffffff" stroke="#232946" stroke-width="2.5" stroke-linejoin="round" />
+            <path d="M100 94 L108 86 L116 94 L124 86 L132 94" fill="#ffffff" stroke="#232946" stroke-width="2.5" stroke-linejoin="round" />
+            <!-- Googly eyes -->
+            <circle cx="66" cy="40" r="13" fill="#ffffff" stroke="#232946" stroke-width="3.5" />
+            <circle cx="92" cy="40" r="13" fill="#ffffff" stroke="#232946" stroke-width="3.5" />
+            <circle class="pupil" data-cx="66" data-cy="40" cx="66" cy="40" r="5" fill="#232946" />
+            <circle class="pupil" data-cx="92" data-cy="40" cx="92" cy="40" r="5" fill="#232946" />
+            <!-- Cheeks -->
+            <circle cx="46" cy="78" r="6" fill="#ff8787" opacity="0.65" />
+          </svg>
+        </div>
+
+        <div class="speech-bubble" id="croc-quote">"Hamm! A szám-krokodil mindig a NAGYOBBAT eszi meg!"</div>
+        <h2 class="card-title">Krokodil Kóstoló!</h2>
+        <p class="card-desc">
+          Kisebb, nagyobb vagy egyenlő? Segíts Krokinak kiválasztani a nagyobb falatot: &lt;, &gt; vagy =!
+        </p>
+
+        <div class="tags-row">
+          <span class="tag">🐊 &lt; &gt; =</span>
+          <span class="tag">🔢 1–100</span>
+        </div>
+
+        <a class="launch-btn croc-btn" href="krokodil.html" data-app="croc">
+          <span>Etessük Krokot!</span>
+          <span>➔</span>
+        </a>
+      </article>
     </section>
 
     <!-- Funny interactive bar -->
@@ -910,10 +958,18 @@
       '"A méretcsíkok segítenek, ha elakadnál!"'
     ];
 
+    const crocQuotes = [
+      '"Hamm! A szám-krokodil mindig a NAGYOBBAT eszi meg!"',
+      '"Ha mindkét oldal egyforma, akkor = jelet mutatok!"',
+      '"Kicsi vagy nagy? Nézd meg a pöttyöket, ha bizonytalan vagy!"',
+      '"1–100 között már tízes blokkokat is számolok!"'
+    ];
+
     let owlIdx = 0;
     let monsterIdx = 0;
     let frogIdx = 0;
     let rocketIdx = 0;
+    let crocIdx = 0;
     document.querySelector('[data-mascot="owl"]').addEventListener("click", () => {
       owlIdx = (owlIdx + 1) % owlQuotes.length;
       document.getElementById("owl-quote").textContent = owlQuotes[owlIdx];
@@ -936,6 +992,12 @@
       rocketIdx = (rocketIdx + 1) % rocketQuotes.length;
       document.getElementById("rocket-quote").textContent = rocketQuotes[rocketIdx];
       playTone(680, 0.09, "triangle");
+    });
+
+    document.querySelector('[data-mascot="croc"]').addEventListener("click", () => {
+      crocIdx = (crocIdx + 1) % crocQuotes.length;
+      document.getElementById("croc-quote").textContent = crocQuotes[crocIdx];
+      playTone(320, 0.09, "square", 0.05);
     });
 
     // --- Math Jokes ---
@@ -1027,7 +1089,8 @@
       { el: document.getElementById("card-monster"), url: "plusminus.html", name: "Szörnyes Matek" },
       { el: document.getElementById("card-rain"), url: "hulloszamok.html", name: "Számeső!" },
       { el: document.getElementById("card-snake"), url: "kigyo.html", name: "Számkígyó!" },
-      { el: document.getElementById("card-space"), url: "sorrend.html", name: "Űrlépcső!" }
+      { el: document.getElementById("card-space"), url: "sorrend.html", name: "Űrlépcső!" },
+      { el: document.getElementById("card-croc"), url: "krokodil.html", name: "Krokodil Kóstoló!" }
     ];
 
     let spinning = false;
@@ -1056,7 +1119,7 @@
       }, 130);
     });
 
-    // --- Keyboard Shortcuts (1-5, C, J) ---
+    // --- Keyboard Shortcuts (1-6, C, J) ---
     window.addEventListener("keydown", (e) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
       const key = e.key.toLowerCase();
@@ -1075,6 +1138,9 @@
       } else if (key === "5") {
         playCheer();
         window.location.href = "sorrend.html";
+      } else if (key === "6") {
+        playCheer();
+        window.location.href = "krokodil.html";
       } else if (key === "c") {
         burstConfetti(90);
         playCheer();
