@@ -394,6 +394,10 @@
       background: #fff0f6;
     }
 
+    .card-double .tag {
+      background: #e6fcf5;
+    }
+
     .launch-btn {
       width: 100%;
       margin-top: auto;
@@ -460,6 +464,11 @@
 
     .launch-btn.mirror-btn {
       background: linear-gradient(180deg, #f06595 0%, #c2255c 100%);
+      box-shadow: 0 6px 0 var(--ink);
+    }
+
+    .launch-btn.double-btn {
+      background: linear-gradient(180deg, #20c997 0%, #099268 100%);
       box-shadow: 0 6px 0 var(--ink);
     }
 
@@ -1053,6 +1062,50 @@
           <span>➔</span>
         </a>
       </article>
+
+      <!-- App 11: Duplázó & Felező (Doubles & Halves) -->
+      <article class="app-card card-double" id="card-double">
+        <span class="card-ribbon">Gomb: <kbd>D</kbd></span>
+        <a class="new-tab-link" href="duplazo.html" target="_blank" rel="noopener" title="Megnyitás új lapon">↗</a>
+
+        <div class="mascot-stage" data-mascot="double" title="Bökd meg a Robotot!">
+          <svg viewBox="0 0 160 140" aria-hidden="true">
+            <!-- Antenna -->
+            <line x1="80" y1="18" x2="80" y2="34" stroke="#232946" stroke-width="4" stroke-linecap="round" />
+            <circle cx="80" cy="15" r="7" fill="#ffd43b" stroke="#232946" stroke-width="3" />
+            <!-- Robot Head -->
+            <rect x="38" y="34" width="84" height="72" rx="18" fill="#20c997" stroke="#232946" stroke-width="4" />
+            <!-- Ears -->
+            <rect x="26" y="56" width="12" height="24" rx="5" fill="#ffd43b" stroke="#232946" stroke-width="3" />
+            <rect x="122" y="56" width="12" height="24" rx="5" fill="#ffd43b" stroke="#232946" stroke-width="3" />
+            <!-- Googly eyes -->
+            <circle cx="62" cy="62" r="12" fill="#ffffff" stroke="#232946" stroke-width="3" />
+            <circle cx="98" cy="62" r="12" fill="#ffffff" stroke="#232946" stroke-width="3" />
+            <circle class="pupil" data-cx="62" data-cy="62" cx="62" cy="62" r="5" fill="#232946" />
+            <circle class="pupil" data-cx="98" data-cy="62" cx="98" cy="62" r="5" fill="#232946" />
+            <!-- Mouth -->
+            <rect x="56" y="84" width="48" height="12" rx="6" fill="#ffffff" stroke="#232946" stroke-width="3" />
+            <line x1="72" y1="84" x2="72" y2="96" stroke="#232946" stroke-width="2.5" />
+            <line x1="88" y1="84" x2="88" y2="96" stroke="#232946" stroke-width="2.5" />
+          </svg>
+        </div>
+
+        <div class="speech-bubble" id="double-quote">"Bimm-bamm! A varázsgép megduplázza vagy elfelezi a sütiket!"</div>
+        <h2 class="card-title">Duplázó &amp; Felező!</h2>
+        <p class="card-desc">
+          Mennyi a duplája, és mennyi a fele? Gyakorold a gyors fejszámolást 1–40 között a sütigyárban!
+        </p>
+
+        <div class="tags-row">
+          <span class="tag">✖️2 Duplázás</span>
+          <span class="tag">➗2 Felezés</span>
+        </div>
+
+        <a class="launch-btn double-btn" href="duplazo.html" data-app="double">
+          <span>Induljon a Gép!</span>
+          <span>➔</span>
+        </a>
+      </article>
     </section>
 
     <!-- Funny interactive bar -->
@@ -1198,6 +1251,13 @@
       '"4×4-től egészen a 8×8-as mesterpályáig!"'
     ];
 
+    const doubleQuotes = [
+      '"Bimm-bamm! A varázsgép megduplázza vagy elfelezi a sütiket!"',
+      '"Ha 6-ot teszel be a duplázóba, 6 + 6 = 12 jön ki!"',
+      '"Felezésnél két egyenlő részre osztjuk a sütiket!"',
+      '"A duplák ismerete szupergyorssá teszi a matekot!"'
+    ];
+
     let owlIdx = 0;
     let monsterIdx = 0;
     let frogIdx = 0;
@@ -1207,6 +1267,7 @@
     let pondIdx = 0;
     let clockIdx = 0;
     let mirrorIdx = 0;
+    let doubleIdx = 0;
     document.querySelector('[data-mascot="owl"]').addEventListener("click", () => {
       owlIdx = (owlIdx + 1) % owlQuotes.length;
       document.getElementById("owl-quote").textContent = owlQuotes[owlIdx];
@@ -1259,6 +1320,12 @@
       mirrorIdx = (mirrorIdx + 1) % mirrorQuotes.length;
       document.getElementById("mirror-quote").textContent = mirrorQuotes[mirrorIdx];
       playTone(640, 0.08, "triangle", 0.07);
+    });
+
+    document.querySelector('[data-mascot="double"]').addEventListener("click", () => {
+      doubleIdx = (doubleIdx + 1) % doubleQuotes.length;
+      document.getElementById("double-quote").textContent = doubleQuotes[doubleIdx];
+      playTone(580, 0.08, "square", 0.05);
     });
 
     // --- Math Jokes ---
@@ -1355,7 +1422,8 @@
       { el: document.getElementById("card-scale"), url: "merleg.html", name: "Mérleg Műhely!" },
       { el: document.getElementById("card-pond"), url: "beka.html", name: "Béka Ugrás!" },
       { el: document.getElementById("card-clock"), url: "ora.html", name: "Óra Manó!" },
-      { el: document.getElementById("card-mirror"), url: "tukor.html", name: "Tükör Varázs!" }
+      { el: document.getElementById("card-mirror"), url: "tukor.html", name: "Tükör Varázs!" },
+      { el: document.getElementById("card-double"), url: "duplazo.html", name: "Duplázó & Felező!" }
     ];
 
     let spinning = false;
@@ -1384,7 +1452,7 @@
       }, 130);
     });
 
-    // --- Keyboard Shortcuts (0-9, C, J) ---
+    // --- Keyboard Shortcuts (0-9, D, C, J) ---
     window.addEventListener("keydown", (e) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
       const key = e.key.toLowerCase();
@@ -1418,6 +1486,9 @@
       } else if (key === "0") {
         playCheer();
         window.location.href = "tukor.html";
+      } else if (key === "d") {
+        playCheer();
+        window.location.href = "duplazo.html";
       } else if (key === "c") {
         burstConfetti(90);
         playCheer();
