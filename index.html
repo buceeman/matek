@@ -382,6 +382,10 @@
       background: #fff4e6;
     }
 
+    .card-pond .tag {
+      background: #e7f5ff;
+    }
+
     .launch-btn {
       width: 100%;
       margin-top: auto;
@@ -433,6 +437,11 @@
 
     .launch-btn.scale-btn {
       background: linear-gradient(180deg, #fcc419 0%, #f08c00 100%);
+      box-shadow: 0 6px 0 var(--ink);
+    }
+
+    .launch-btn.pond-btn {
+      background: linear-gradient(180deg, #69db7c 0%, #2b8a3e 100%);
       box-shadow: 0 6px 0 var(--ink);
     }
 
@@ -904,6 +913,47 @@
           <span>➔</span>
         </a>
       </article>
+
+      <!-- App 8: Béka Ugrás (Skip Counting) -->
+      <article class="app-card card-pond" id="card-pond">
+        <span class="card-ribbon">Gomb: <kbd>8</kbd></span>
+        <a class="new-tab-link" href="beka.html" target="_blank" rel="noopener" title="Megnyitás új lapon">↗</a>
+
+        <div class="mascot-stage" data-mascot="pond" title="Bökd meg a Békát!">
+          <svg viewBox="0 0 160 140" aria-hidden="true">
+            <!-- Lilypad -->
+            <ellipse cx="80" cy="108" rx="54" ry="18" fill="#69db7c" stroke="#232946" stroke-width="3.5" />
+            <path d="M80 108 L128 98" stroke="#232946" stroke-width="3" stroke-linecap="round" />
+            <!-- Frog body -->
+            <ellipse cx="80" cy="78" rx="34" ry="26" fill="#51cf66" stroke="#232946" stroke-width="3.5" />
+            <!-- Belly -->
+            <ellipse cx="80" cy="84" rx="20" ry="14" fill="#d8f5a2" />
+            <!-- Googly eyes -->
+            <circle cx="62" cy="48" r="14" fill="#ffffff" stroke="#232946" stroke-width="3.5" />
+            <circle cx="98" cy="48" r="14" fill="#ffffff" stroke="#232946" stroke-width="3.5" />
+            <circle class="pupil" data-cx="62" data-cy="48" cx="62" cy="48" r="5.5" fill="#232946" />
+            <circle class="pupil" data-cx="98" data-cy="48" cx="98" cy="48" r="5.5" fill="#232946" />
+            <!-- Smile -->
+            <path d="M64 76 Q80 88 96 76" fill="none" stroke="#232946" stroke-width="3.5" stroke-linecap="round" />
+          </svg>
+        </div>
+
+        <div class="speech-bubble" id="pond-quote">"Brekeke! Ugorjunk kettesével, ötösével vagy tízesével a tavirózsákon!"</div>
+        <h2 class="card-title">Béka Ugrás!</h2>
+        <p class="card-desc">
+          Segíts a békának átkelni a tavon! Gyakorold a +2, +5, +10 és visszafelé ugráló számsorokat!
+        </p>
+
+        <div class="tags-row">
+          <span class="tag">🐸 +2 +5 +10</span>
+          <span class="tag">🔢 1–100</span>
+        </div>
+
+        <a class="launch-btn pond-btn" href="beka.html" data-app="pond">
+          <span>Ugorjunk a Tavon!</span>
+          <span>➔</span>
+        </a>
+      </article>
     </section>
 
     <!-- Funny interactive bar -->
@@ -1028,12 +1078,20 @@
       '"A kockák segítenek megszámolni, mennyi hiányzik!"'
     ];
 
+    const pondQuotes = [
+      '"Brekeke! Ugorjunk kettesével, ötösével vagy tízesével a tavirózsákon!"',
+      '"Visszafelé is tudok ugrálni: 20, 18, 16... mi a következő?"',
+      '"Ha elakadnál, a Szabály gomb megmutatja az ugrás méretét!"',
+      '"Csobbanás nélkül át a tavon — hajrá!"'
+    ];
+
     let owlIdx = 0;
     let monsterIdx = 0;
     let frogIdx = 0;
     let rocketIdx = 0;
     let crocIdx = 0;
     let scaleIdx = 0;
+    let pondIdx = 0;
     document.querySelector('[data-mascot="owl"]').addEventListener("click", () => {
       owlIdx = (owlIdx + 1) % owlQuotes.length;
       document.getElementById("owl-quote").textContent = owlQuotes[owlIdx];
@@ -1068,6 +1126,12 @@
       scaleIdx = (scaleIdx + 1) % scaleQuotes.length;
       document.getElementById("scale-quote").textContent = scaleQuotes[scaleIdx];
       playTone(540, 0.09, "triangle", 0.06);
+    });
+
+    document.querySelector('[data-mascot="pond"]').addEventListener("click", () => {
+      pondIdx = (pondIdx + 1) % pondQuotes.length;
+      document.getElementById("pond-quote").textContent = pondQuotes[pondIdx];
+      playTone(420, 0.09, "sine", 0.07);
     });
 
     // --- Math Jokes ---
@@ -1161,7 +1225,8 @@
       { el: document.getElementById("card-snake"), url: "kigyo.html", name: "Számkígyó!" },
       { el: document.getElementById("card-space"), url: "sorrend.html", name: "Űrlépcső!" },
       { el: document.getElementById("card-croc"), url: "krokodil.html", name: "Krokodil Kóstoló!" },
-      { el: document.getElementById("card-scale"), url: "merleg.html", name: "Mérleg Műhely!" }
+      { el: document.getElementById("card-scale"), url: "merleg.html", name: "Mérleg Műhely!" },
+      { el: document.getElementById("card-pond"), url: "beka.html", name: "Béka Ugrás!" }
     ];
 
     let spinning = false;
@@ -1190,7 +1255,7 @@
       }, 130);
     });
 
-    // --- Keyboard Shortcuts (1-7, C, J) ---
+    // --- Keyboard Shortcuts (1-8, C, J) ---
     window.addEventListener("keydown", (e) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
       const key = e.key.toLowerCase();
@@ -1215,6 +1280,9 @@
       } else if (key === "7") {
         playCheer();
         window.location.href = "merleg.html";
+      } else if (key === "8") {
+        playCheer();
+        window.location.href = "beka.html";
       } else if (key === "c") {
         burstConfetti(90);
         playCheer();
