@@ -386,6 +386,10 @@
       background: #e7f5ff;
     }
 
+    .card-clock .tag {
+      background: #f3f0ff;
+    }
+
     .launch-btn {
       width: 100%;
       margin-top: auto;
@@ -442,6 +446,11 @@
 
     .launch-btn.pond-btn {
       background: linear-gradient(180deg, #69db7c 0%, #2b8a3e 100%);
+      box-shadow: 0 6px 0 var(--ink);
+    }
+
+    .launch-btn.clock-btn {
+      background: linear-gradient(180deg, #845ef7 0%, #5f3dc4 100%);
       box-shadow: 0 6px 0 var(--ink);
     }
 
@@ -954,6 +963,48 @@
           <span>➔</span>
         </a>
       </article>
+
+      <!-- App 9: Óra Manó (Clock) -->
+      <article class="app-card card-clock" id="card-clock">
+        <span class="card-ribbon">Gomb: <kbd>9</kbd></span>
+        <a class="new-tab-link" href="ora.html" target="_blank" rel="noopener" title="Megnyitás új lapon">↗</a>
+
+        <div class="mascot-stage" data-mascot="clock" title="Bökd meg az Órát!">
+          <svg viewBox="0 0 160 140" aria-hidden="true">
+            <!-- Clock bells -->
+            <circle cx="44" cy="36" r="14" fill="#ffd93d" stroke="#232946" stroke-width="3.5" />
+            <circle cx="116" cy="36" r="14" fill="#ffd93d" stroke="#232946" stroke-width="3.5" />
+            <!-- Clock body -->
+            <circle cx="80" cy="74" r="46" fill="#9775fa" stroke="#232946" stroke-width="4" />
+            <circle cx="80" cy="74" r="37" fill="#ffffff" stroke="#232946" stroke-width="3" />
+            <!-- Googly eyes -->
+            <circle cx="67" cy="64" r="8.5" fill="#ffffff" stroke="#232946" stroke-width="2.5" />
+            <circle cx="93" cy="64" r="8.5" fill="#ffffff" stroke="#232946" stroke-width="2.5" />
+            <circle class="pupil" data-cx="67" data-cy="64" cx="67" cy="64" r="3.8" fill="#232946" />
+            <circle class="pupil" data-cx="93" data-cy="64" cx="93" cy="64" r="3.8" fill="#232946" />
+            <!-- Clock hands as mustache/smile -->
+            <line x1="80" y1="78" x2="80" y2="52" stroke="#20c997" stroke-width="4" stroke-linecap="round" />
+            <line x1="80" y1="78" x2="100" y2="86" stroke="#ff6b6b" stroke-width="5" stroke-linecap="round" />
+            <circle cx="80" cy="78" r="5" fill="#ffd93d" stroke="#232946" stroke-width="2.5" />
+          </svg>
+        </div>
+
+        <div class="speech-bubble" id="clock-quote">"Tik-tak! Olvassuk le és állítsuk be együtt az órát!"</div>
+        <h2 class="card-title">Óra Manó!</h2>
+        <p class="card-desc">
+          Mennyi az idő? Tanuld meg az egész, fél és negyed órákat leolvasni és beállítani!
+        </p>
+
+        <div class="tags-row">
+          <span class="tag">🕒 Egész &amp; Fél</span>
+          <span class="tag">⏰ 1–12</span>
+        </div>
+
+        <a class="launch-btn clock-btn" href="ora.html" data-app="clock">
+          <span>Tik-Tak Indulás!</span>
+          <span>➔</span>
+        </a>
+      </article>
     </section>
 
     <!-- Funny interactive bar -->
@@ -1085,6 +1136,13 @@
       '"Csobbanás nélkül át a tavon — hajrá!"'
     ];
 
+    const clockQuotes = [
+      '"Tik-tak! Olvassuk le és állítsuk be együtt az órát!"',
+      '"A piros rövid mutató az órát, a zöld hosszú a percet mutatja!"',
+      '"Reggeli, iskola, játékidő — állítsd be a pontos időt!"',
+      '"Egész, fél és negyed óra? Neked gyerekjáték!"'
+    ];
+
     let owlIdx = 0;
     let monsterIdx = 0;
     let frogIdx = 0;
@@ -1092,6 +1150,7 @@
     let crocIdx = 0;
     let scaleIdx = 0;
     let pondIdx = 0;
+    let clockIdx = 0;
     document.querySelector('[data-mascot="owl"]').addEventListener("click", () => {
       owlIdx = (owlIdx + 1) % owlQuotes.length;
       document.getElementById("owl-quote").textContent = owlQuotes[owlIdx];
@@ -1132,6 +1191,12 @@
       pondIdx = (pondIdx + 1) % pondQuotes.length;
       document.getElementById("pond-quote").textContent = pondQuotes[pondIdx];
       playTone(420, 0.09, "sine", 0.07);
+    });
+
+    document.querySelector('[data-mascot="clock"]').addEventListener("click", () => {
+      clockIdx = (clockIdx + 1) % clockQuotes.length;
+      document.getElementById("clock-quote").textContent = clockQuotes[clockIdx];
+      playTone(760, 0.07, "sine", 0.07);
     });
 
     // --- Math Jokes ---
@@ -1226,7 +1291,8 @@
       { el: document.getElementById("card-space"), url: "sorrend.html", name: "Űrlépcső!" },
       { el: document.getElementById("card-croc"), url: "krokodil.html", name: "Krokodil Kóstoló!" },
       { el: document.getElementById("card-scale"), url: "merleg.html", name: "Mérleg Műhely!" },
-      { el: document.getElementById("card-pond"), url: "beka.html", name: "Béka Ugrás!" }
+      { el: document.getElementById("card-pond"), url: "beka.html", name: "Béka Ugrás!" },
+      { el: document.getElementById("card-clock"), url: "ora.html", name: "Óra Manó!" }
     ];
 
     let spinning = false;
@@ -1255,7 +1321,7 @@
       }, 130);
     });
 
-    // --- Keyboard Shortcuts (1-8, C, J) ---
+    // --- Keyboard Shortcuts (1-9, C, J) ---
     window.addEventListener("keydown", (e) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
       const key = e.key.toLowerCase();
@@ -1283,6 +1349,9 @@
       } else if (key === "8") {
         playCheer();
         window.location.href = "beka.html";
+      } else if (key === "9") {
+        playCheer();
+        window.location.href = "ora.html";
       } else if (key === "c") {
         burstConfetti(90);
         playCheer();
